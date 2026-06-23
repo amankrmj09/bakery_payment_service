@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "order-service", path = "/api/orders")
+@FeignClient(name = "bakery-order-service", path = "/api/orders")
 public interface OrderServiceClient {
 
     @GetMapping("/{orderId}")
