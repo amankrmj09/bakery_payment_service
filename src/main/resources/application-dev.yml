@@ -1,0 +1,3 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://blubug.me:8004/bakery_payments
