@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
+import com.shah_s.bakery_payment_service.exception.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -329,11 +330,11 @@ public class RefundService {
 
         // Check refund amount
         if (request.getAmount().compareTo(payment.getRefundableAmount()) > 0) {
-            throw new PaymentServiceException("Refund amount exceeds refundable amount: " + payment.getRefundableAmount());
+            throw new InvalidRefundException("Refund amount exceeds refundable amount: " + payment.getRefundableAmount());
         }
 
         if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new PaymentServiceException("Refund amount must be greater than zero");
+            throw new InvalidRefundException("Refund amount must be greater than zero");
         }
     }
 

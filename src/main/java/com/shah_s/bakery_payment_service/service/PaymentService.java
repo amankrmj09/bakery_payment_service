@@ -2,6 +2,7 @@ package com.shah_s.bakery_payment_service.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shah_s.bakery_payment_service.client.OrderServiceClient;
+import com.shah_s.bakery_payment_service.client.NotificationServiceClient;
 import com.shah_s.bakery_payment_service.dto.*;
 import com.shah_s.bakery_payment_service.entity.Payment;
 import com.shah_s.bakery_payment_service.entity.PaymentTransaction;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
+import com.shah_s.bakery_payment_service.exception.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,8 @@ public class PaymentService {
     final private PaymentGatewayService paymentGatewayService;
 
     final private OrderServiceClient orderServiceClient;
+    
+    final private NotificationServiceClient notificationServiceClient;
 
     final private ObjectMapper objectMapper;
 
@@ -53,12 +57,13 @@ public class PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, ObjectMapper objectMapper) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, NotificationServiceClient notificationServiceClient, ObjectMapper objectMapper) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
         this.paymentGatewayService = paymentGatewayService;
         this.orderServiceClient = orderServiceClient;
+        this.notificationServiceClient = notificationServiceClient;
         this.objectMapper = objectMapper;
     }
 
@@ -79,7 +84,7 @@ public class PaymentService {
             // Verify order exists
             Map<String, Object> orderInfo = orderServiceClient.getOrderById(request.getOrderId());
             if (orderInfo == null) {
-                throw new PaymentServiceException("Order not found: " + request.getOrderId());
+                throw new OrderNotFoundException("Order not found: " + request.getOrderId());
             }
 
             // Create payment entity
@@ -212,6 +217,9 @@ public class PaymentService {
 
         // Notify order service of payment status change
         notifyOrderServiceAsync(updatedPayment);
+        
+        // Notify user
+        sendPaymentNotificationAsync(updatedPayment);
 
         logger.info("Payment status updated successfully: {} from {} to {}",
                    paymentId, oldStatus, request.getStatus());
@@ -375,6 +383,9 @@ public class PaymentService {
 
             // Notify order service
             notifyOrderServiceAsync(payment);
+            
+            // Notify user
+            sendPaymentNotificationAsync(payment);
 
             logger.info("Payment processing completed: {} status: {}",
                        payment.getPaymentReference(), payment.getStatus());
@@ -390,6 +401,9 @@ public class PaymentService {
 
             // Notify order service
             notifyOrderServiceAsync(payment);
+            
+            // Notify user
+            sendPaymentNotificationAsync(payment);
         }
     }
 
@@ -413,11 +427,45 @@ public class PaymentService {
         }
     }
 
+    @Async
+    protected void sendPaymentNotificationAsync(Payment payment) {
+        if (payment.getStatus() != Payment.PaymentStatus.COMPLETED && payment.getStatus() != Payment.PaymentStatus.FAILED) {
+            return;
+        }
+        
+        try {
+            Map<String, Object> orderInfo = orderServiceClient.getOrderById(payment.getOrderId());
+            String email = orderInfo != null ? (String) orderInfo.get("customerEmail") : null;
+            String name = orderInfo != null ? (String) orderInfo.get("customerName") : null;
+            
+            Map<String, Object> notificationReq = new java.util.HashMap<>();
+            notificationReq.put("type", "EMAIL");
+            if (email != null) notificationReq.put("recipientEmail", email);
+            if (name != null) notificationReq.put("recipientName", name);
+            notificationReq.put("source", "PAYMENT_SERVICE");
+            notificationReq.put("userId", payment.getUserId());
+            
+            if (payment.getStatus() == Payment.PaymentStatus.COMPLETED) {
+                notificationReq.put("title", "Payment Receipt: " + payment.getPaymentReference());
+                notificationReq.put("subject", "Payment Receipt: " + payment.getPaymentReference());
+                notificationReq.put("content", "Your payment of $" + payment.getAmount() + " was successful.");
+            } else {
+                notificationReq.put("title", "Payment Failed: " + payment.getPaymentReference());
+                notificationReq.put("subject", "Payment Failed: " + payment.getPaymentReference());
+                notificationReq.put("content", "Your payment of $" + payment.getAmount() + " failed. Reason: " + payment.getFailureReason());
+            }
+            
+            notificationServiceClient.sendNotification(notificationReq);
+        } catch (Exception ex) {
+            logger.error("Failed to send payment notification: {}", ex.getMessage());
+        }
+    }
+
     private void validatePaymentRequest(PaymentRequest request) {
         // Retrieve order info
         Map<String, Object> orderInfo = orderServiceClient.getOrderById(request.getOrderId());
         if (orderInfo == null) {
-            throw new PaymentServiceException("Order not found: " + request.getOrderId());
+            throw new OrderNotFoundException("Order not found: " + request.getOrderId());
         }
         // Extract totalAmount from orderInfo
         Object totalAmountObj = orderInfo.get("totalAmount");
@@ -436,11 +484,11 @@ public class PaymentService {
         }
 
         if (request.getAmount().compareTo(minPaymentAmount) < 0) {
-            throw new PaymentServiceException("Payment amount is below minimum: " + minPaymentAmount);
+            throw new InvalidPaymentAmountException("Payment amount is below minimum: " + minPaymentAmount);
         }
 
         if (request.getAmount().compareTo(maxPaymentAmount) > 0) {
-            throw new PaymentServiceException("Payment amount exceeds maximum: " + maxPaymentAmount);
+            throw new InvalidPaymentAmountException("Payment amount exceeds maximum: " + maxPaymentAmount);
         }
 
         // Check daily limit for user
@@ -467,7 +515,7 @@ public class PaymentService {
         };
 
         if (!isValidTransition) {
-            throw new PaymentServiceException("Invalid status transition from " + currentStatus + " to " + newStatus);
+            throw new InvalidPaymentStatusException("Invalid status transition from " + currentStatus + " to " + newStatus);
         }
     }
 
