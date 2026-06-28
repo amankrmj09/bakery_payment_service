@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/refunds")
-@CrossOrigin(origins = "*", maxAge = 3600)
+
 public class RefundController {
 
     private static final Logger logger = LoggerFactory.getLogger(RefundController.class);
