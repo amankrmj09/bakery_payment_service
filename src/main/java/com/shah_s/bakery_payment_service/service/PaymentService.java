@@ -3,6 +3,7 @@ package com.shah_s.bakery_payment_service.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shah_s.bakery_payment_service.client.OrderServiceClient;
 import com.shah_s.bakery_payment_service.client.NotificationServiceClient;
+import com.shah_s.bakery_payment_service.client.InternalStatsClient;
 import com.shah_s.bakery_payment_service.dto.*;
 import com.shah_s.bakery_payment_service.entity.Payment;
 import com.shah_s.bakery_payment_service.entity.PaymentTransaction;
@@ -45,6 +46,8 @@ public class PaymentService {
     final private OrderServiceClient orderServiceClient;
     
     final private NotificationServiceClient notificationServiceClient;
+    
+    final private InternalStatsClient internalStatsClient;
 
     final private ObjectMapper objectMapper;
 
@@ -57,7 +60,7 @@ public class PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, NotificationServiceClient notificationServiceClient, ObjectMapper objectMapper) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, NotificationServiceClient notificationServiceClient, ObjectMapper objectMapper, InternalStatsClient internalStatsClient) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
@@ -65,6 +68,7 @@ public class PaymentService {
         this.orderServiceClient = orderServiceClient;
         this.notificationServiceClient = notificationServiceClient;
         this.objectMapper = objectMapper;
+        this.internalStatsClient = internalStatsClient;
     }
 
     // Create payment
