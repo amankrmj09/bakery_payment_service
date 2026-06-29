@@ -50,6 +50,8 @@ public class PaymentService {
     final private InternalStatsClient internalStatsClient;
 
     final private ObjectMapper objectMapper;
+    
+    final private PaymentEventPublisher paymentEventPublisher;
 
     @Value("${payment.limits.min-amount:0.50}")
     private BigDecimal minPaymentAmount;
@@ -60,7 +62,7 @@ public class PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, NotificationServiceClient notificationServiceClient, ObjectMapper objectMapper, InternalStatsClient internalStatsClient) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, NotificationServiceClient notificationServiceClient, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
@@ -69,6 +71,7 @@ public class PaymentService {
         this.notificationServiceClient = notificationServiceClient;
         this.objectMapper = objectMapper;
         this.internalStatsClient = internalStatsClient;
+        this.paymentEventPublisher = paymentEventPublisher;
     }
 
     // Create payment
@@ -414,55 +417,24 @@ public class PaymentService {
     @Async
     protected void notifyOrderServiceAsync(Payment payment) {
         try {
-            Map<String, Object> paymentUpdate = Map.of(
-                    "paymentId", payment.getId(),
-                    "paymentReference", payment.getPaymentReference(),
-                    "status", payment.getStatus().name(),
-                    "amount", payment.getAmount(),
-                    "gatewayResponse", payment.getGatewayResponse() != null ? payment.getGatewayResponse() : ""
-            );
-
-            orderServiceClient.updateOrderPaymentStatus(payment.getOrderId(), paymentUpdate);
-
-            logger.debug("Order service notified of payment update: {}", payment.getPaymentReference());
+            org.devofblue.common.event.PaymentEvent event = org.devofblue.common.event.PaymentEvent.builder()
+                    .paymentId(payment.getId())
+                    .orderId(payment.getOrderId())
+                    .status(payment.getStatus().name())
+                    .amount(payment.getAmount())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            paymentEventPublisher.publishPaymentStatusUpdated(event);
+            logger.debug("Payment status event published for payment: {}", payment.getPaymentReference());
         } catch (Exception e) {
-            logger.error("Failed to notify order service for payment {}: {}",
+            logger.error("Failed to publish payment event for {}: {}",
                         payment.getPaymentReference(), e.getMessage());
         }
     }
 
     @Async
     protected void sendPaymentNotificationAsync(Payment payment) {
-        if (payment.getStatus() != Payment.PaymentStatus.COMPLETED && payment.getStatus() != Payment.PaymentStatus.FAILED) {
-            return;
-        }
-        
-        try {
-            Map<String, Object> orderInfo = orderServiceClient.getOrderById(payment.getOrderId());
-            String email = orderInfo != null ? (String) orderInfo.get("customerEmail") : null;
-            String name = orderInfo != null ? (String) orderInfo.get("customerName") : null;
-            
-            Map<String, Object> notificationReq = new java.util.HashMap<>();
-            notificationReq.put("type", "EMAIL");
-            if (email != null) notificationReq.put("recipientEmail", email);
-            if (name != null) notificationReq.put("recipientName", name);
-            notificationReq.put("source", "PAYMENT_SERVICE");
-            notificationReq.put("userId", payment.getUserId());
-            
-            if (payment.getStatus() == Payment.PaymentStatus.COMPLETED) {
-                notificationReq.put("title", "Payment Receipt: " + payment.getPaymentReference());
-                notificationReq.put("subject", "Payment Receipt: " + payment.getPaymentReference());
-                notificationReq.put("content", "Your payment of $" + payment.getAmount() + " was successful.");
-            } else {
-                notificationReq.put("title", "Payment Failed: " + payment.getPaymentReference());
-                notificationReq.put("subject", "Payment Failed: " + payment.getPaymentReference());
-                notificationReq.put("content", "Your payment of $" + payment.getAmount() + " failed. Reason: " + payment.getFailureReason());
-            }
-            
-            notificationServiceClient.sendNotification(notificationReq);
-        } catch (Exception ex) {
-            logger.error("Failed to send payment notification: {}", ex.getMessage());
-        }
+        // Notification handled asynchronously via Kafka PaymentEvent by NotificationService
     }
 
     private void validatePaymentRequest(PaymentRequest request) {

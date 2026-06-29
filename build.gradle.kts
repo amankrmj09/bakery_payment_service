@@ -34,6 +34,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.kafka:spring-kafka")
 
     testImplementation("org.springframework.security:spring-security-test")
     compileOnly("org.projectlombok:lombok")
