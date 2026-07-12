@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: ${PAYMENT_DB_URL}
+    username: ${PAYMENT_DB_USER}
+    password: ${PAYMENT_DB_PASSWORD}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
+payment:
+  gateways:
+    stripe:
+      api-key: ${STRIPE_API_KEY}
+      webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+    paypal:
+      client-id: ${PAYPAL_CLIENT_ID}
+      client-secret: ${PAYPAL_CLIENT_SECRET}
+    square:
+      access-token: ${SQUARE_ACCESS_TOKEN}
