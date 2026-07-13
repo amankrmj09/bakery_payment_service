@@ -41,6 +41,7 @@ COPY --from=builder /app/extracted/application/ ./
 
 # Expose port (adjust if needed)
 EXPOSE 8087
+ENV SERVER_PORT=8087
 
 # Run the application
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
