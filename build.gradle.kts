@@ -63,6 +63,8 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     
     implementation("org.apache.httpcomponents.client5:httpclient5:5.5")
+	implementation("org.flywaydb:flyway-core")
+	implementation("org.flywaydb:flyway-database-postgresql")
 }
 
 dependencyManagement {
