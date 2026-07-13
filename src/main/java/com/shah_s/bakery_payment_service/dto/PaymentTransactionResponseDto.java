@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Setter
 @Getter
-public class PaymentTransactionResponse {
+public class PaymentTransactionResponseDto {
 
     // Getters and Setters
     private UUID id;
@@ -29,11 +29,11 @@ public class PaymentTransactionResponse {
     private Map<String, Object> metadata;
 
     // Constructors
-    public PaymentTransactionResponse() {}
+    public PaymentTransactionResponseDto() {}
 
     // Static factory method
-    public static PaymentTransactionResponse from(PaymentTransaction transaction) {
-        PaymentTransactionResponse response = new PaymentTransactionResponse();
+    public static PaymentTransactionResponseDto from(PaymentTransaction transaction) {
+        PaymentTransactionResponseDto response = new PaymentTransactionResponseDto();
         response.id = transaction.getId();
         response.transactionType = transaction.getTransactionType();
         response.status = transaction.getStatus();

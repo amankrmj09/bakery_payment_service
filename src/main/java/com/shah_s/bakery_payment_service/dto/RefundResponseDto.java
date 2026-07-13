@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Setter
 @Getter
-public class RefundResponse {
+public class RefundResponseDto {
 
     // Getters and Setters
     private UUID id;
@@ -37,11 +37,11 @@ public class RefundResponse {
     private Map<String, Object> metadata;
 
     // Constructors
-    public RefundResponse() {}
+    public RefundResponseDto() {}
 
     // Static factory method
-    public static RefundResponse from(Refund refund) {
-        RefundResponse response = new RefundResponse();
+    public static RefundResponseDto from(Refund refund) {
+        RefundResponseDto response = new RefundResponseDto();
         response.id = refund.getId();
         response.refundReference = refund.getRefundReference();
         response.paymentId = refund.getPayment().getId();

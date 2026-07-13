@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class PaymentRequest {
+public class PaymentRequestDto {
 
     // Getters and Setters
     @NotNull(message = "Order ID is required")
@@ -62,9 +62,9 @@ public class PaymentRequest {
     private Map<String, Object> metadata;
 
     // Constructors
-    public PaymentRequest() {}
+    public PaymentRequestDto() {}
 
-    public PaymentRequest(UUID orderId, UUID userId, Payment.PaymentMethod paymentMethod, BigDecimal amount) {
+    public PaymentRequestDto(UUID orderId, UUID userId, Payment.PaymentMethod paymentMethod, BigDecimal amount) {
         this.orderId = orderId;
         this.userId = userId;
         this.paymentMethod = paymentMethod;

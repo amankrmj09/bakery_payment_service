@@ -1,7 +1,6 @@
 package com.shah_s.bakery_payment_service.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shah_s.bakery_payment_service.client.OrderServiceClient;
 import com.shah_s.bakery_payment_service.client.InternalStatsClient;
 import com.shah_s.bakery_payment_service.dto.*;
 import com.shah_s.bakery_payment_service.entity.Payment;
@@ -42,7 +41,6 @@ public class PaymentService {
 
     final private PaymentGatewayService paymentGatewayService;
 
-    final private OrderServiceClient orderServiceClient;
     
     final private InternalStatsClient internalStatsClient;
 
@@ -59,19 +57,18 @@ public class PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, OrderServiceClient orderServiceClient, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, PaymentGatewayService paymentGatewayService, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
         this.paymentGatewayService = paymentGatewayService;
-        this.orderServiceClient = orderServiceClient;
         this.objectMapper = objectMapper;
         this.internalStatsClient = internalStatsClient;
         this.paymentEventPublisher = paymentEventPublisher;
     }
 
     // Create payment
-    public PaymentResponse createPayment(PaymentRequest request) {
+    public PaymentResponseDto createPayment(PaymentRequestDto request) {
         logger.info("Creating payment for order: {} amount: {}", request.getOrderId(), request.getAmount());
 
         try {
@@ -84,11 +81,7 @@ public class PaymentService {
                 throw new PaymentServiceException("Payment already exists for order: " + request.getOrderId());
             }
 
-            // Verify order exists
-            Map<String, Object> orderInfo = orderServiceClient.getOrderById(request.getOrderId());
-            if (orderInfo == null) {
-                throw new OrderNotFoundException("Order not found: " + request.getOrderId());
-            }
+            // Order validation skipped because this is triggered by OrderEvent
 
             // Create payment entity
             Payment payment = new Payment(request.getOrderId(), request.getUserId(),
@@ -122,7 +115,7 @@ public class PaymentService {
             processPaymentAsync(savedPayment);
 
             logger.info("Payment created successfully: {}", savedPayment.getPaymentReference());
-            return PaymentResponse.from(savedPayment);
+            return PaymentResponseDto.from(savedPayment);
 
         } catch (Exception e) {
             logger.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage());
@@ -132,68 +125,68 @@ public class PaymentService {
 
     // Get payment by ID
     @Transactional(readOnly = true)
-    public PaymentResponse getPaymentById(UUID paymentId) {
+    public PaymentResponseDto getPaymentById(UUID paymentId) {
         logger.debug("Fetching payment by ID: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentServiceException("Payment not found with ID: " + paymentId));
 
-        return PaymentResponse.from(payment);
+        return PaymentResponseDto.from(payment);
     }
 
     // Get payment by reference
     @Transactional(readOnly = true)
-    public PaymentResponse getPaymentByReference(String paymentReference) {
+    public PaymentResponseDto getPaymentByReference(String paymentReference) {
         logger.debug("Fetching payment by reference: {}", paymentReference);
 
         Payment payment = paymentRepository.findByPaymentReference(paymentReference)
                 .orElseThrow(() -> new PaymentServiceException("Payment not found with reference: " + paymentReference));
 
-        return PaymentResponse.from(payment);
+        return PaymentResponseDto.from(payment);
     }
 
     // Get payment by order ID
     @Transactional(readOnly = true)
-    public PaymentResponse getPaymentByOrderId(UUID orderId) {
+    public PaymentResponseDto getPaymentByOrderId(UUID orderId) {
         logger.debug("Fetching payment by order ID: {}", orderId);
 
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new PaymentServiceException("Payment not found for order: " + orderId));
 
-        return PaymentResponse.from(payment);
+        return PaymentResponseDto.from(payment);
     }
 
     // Get payments by user ID
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentsByUserId(UUID userId) {
+    public List<PaymentResponseDto> getPaymentsByUserId(UUID userId) {
         logger.debug("Fetching payments for user: {}", userId);
 
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(PaymentResponse::from)
+                .map(PaymentResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get payments by status
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentsByStatus(Payment.PaymentStatus status) {
+    public List<PaymentResponseDto> getPaymentsByStatus(Payment.PaymentStatus status) {
         logger.debug("Fetching payments by status: {}", status);
 
         return paymentRepository.findByStatusOrderByCreatedAtDesc(status).stream()
-                .map(PaymentResponse::from)
+                .map(PaymentResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get all payments with pagination
     @Transactional(readOnly = true)
-    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
+    public Page<PaymentResponseDto> getAllPayments(Pageable pageable) {
         logger.debug("Fetching all payments with pagination");
 
         return paymentRepository.findAll(pageable)
-                .map(PaymentResponse::from);
+                .map(PaymentResponseDto::from);
     }
 
     // Update payment status
-    public PaymentResponse updatePaymentStatus(UUID paymentId, PaymentStatusUpdateRequest request) {
+    public PaymentResponseDto updatePaymentStatus(UUID paymentId, PaymentStatusUpdateRequestDto request) {
         logger.info("Updating payment status: {} to {}", paymentId, request.getStatus());
 
         Payment payment = paymentRepository.findById(paymentId)
@@ -227,11 +220,11 @@ public class PaymentService {
         logger.info("Payment status updated successfully: {} from {} to {}",
                    paymentId, oldStatus, request.getStatus());
 
-        return PaymentResponse.from(updatedPayment);
+        return PaymentResponseDto.from(updatedPayment);
     }
 
     // Cancel payment
-    public PaymentResponse cancelPayment(UUID paymentId, String reason) {
+    public PaymentResponseDto cancelPayment(UUID paymentId, String reason) {
         logger.info("Cancelling payment: {} with reason: {}", paymentId, reason);
 
         Payment payment = paymentRepository.findById(paymentId)
@@ -266,11 +259,11 @@ public class PaymentService {
         notifyOrderServiceAsync(cancelledPayment);
 
         logger.info("Payment cancelled successfully: {}", paymentId);
-        return PaymentResponse.from(cancelledPayment);
+        return PaymentResponseDto.from(cancelledPayment);
     }
 
     // Retry failed payment
-    public PaymentResponse retryPayment(UUID paymentId) {
+    public PaymentResponseDto retryPayment(UUID paymentId) {
         logger.info("Retrying failed payment: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
@@ -291,7 +284,7 @@ public class PaymentService {
         processPaymentAsync(savedPayment);
 
         logger.info("Payment retry initiated: {}", paymentId);
-        return PaymentResponse.from(savedPayment);
+        return PaymentResponseDto.from(savedPayment);
     }
 
     // Get payment statistics
@@ -433,27 +426,9 @@ public class PaymentService {
         // Notification handled asynchronously via Kafka PaymentEvent by NotificationService
     }
 
-    private void validatePaymentRequest(PaymentRequest request) {
-        // Retrieve order info
-        Map<String, Object> orderInfo = orderServiceClient.getOrderById(request.getOrderId());
-        if (orderInfo == null) {
-            throw new OrderNotFoundException("Order not found: " + request.getOrderId());
-        }
-        // Extract totalAmount from orderInfo
-        Object totalAmountObj = orderInfo.get("totalAmount");
-        if (totalAmountObj == null) {
-            throw new PaymentServiceException("Order total amount not found for order: " + request.getOrderId());
-        }
-        BigDecimal orderTotalAmount;
-        try {
-            orderTotalAmount = new BigDecimal(totalAmountObj.toString());
-        } catch (Exception e) {
-            throw new PaymentServiceException("Invalid order total amount for order: " + request.getOrderId());
-        }
-        // Compare payment amount with order total amount
-        if (request.getAmount().compareTo(orderTotalAmount) != 0) {
-            throw new PaymentServiceException("Payment amount (" + request.getAmount() + ") does not match order total amount (" + orderTotalAmount + ")");
-        }
+    private void validatePaymentRequest(PaymentRequestDto request) {
+        // Order validation skipped (event-driven)
+        // Validation skipped (trust the event)
 
         if (request.getAmount().compareTo(minPaymentAmount) < 0) {
             throw new InvalidPaymentAmountException("Payment amount is below minimum: " + minPaymentAmount);

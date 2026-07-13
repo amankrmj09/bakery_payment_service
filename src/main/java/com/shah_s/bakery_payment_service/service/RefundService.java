@@ -1,8 +1,8 @@
 package com.shah_s.bakery_payment_service.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shah_s.bakery_payment_service.dto.RefundRequest;
-import com.shah_s.bakery_payment_service.dto.RefundResponse;
+import com.shah_s.bakery_payment_service.dto.RefundRequestDto;
+import com.shah_s.bakery_payment_service.dto.RefundResponseDto;
 import com.shah_s.bakery_payment_service.entity.Payment;
 import com.shah_s.bakery_payment_service.entity.Refund;
 import com.shah_s.bakery_payment_service.exception.PaymentServiceException;
@@ -49,7 +49,7 @@ public class RefundService {
     }
 
     // Create refund
-    public RefundResponse createRefund(RefundRequest request) {
+    public RefundResponseDto createRefund(RefundRequestDto request) {
         logger.info("Creating refund for payment: {} amount: {}", request.getPaymentId(), request.getAmount());
 
         try {
@@ -76,7 +76,7 @@ public class RefundService {
             processRefundAsync(savedRefund);
 
             logger.info("Refund created successfully: {}", savedRefund.getRefundReference());
-            return RefundResponse.from(savedRefund);
+            return RefundResponseDto.from(savedRefund);
 
         } catch (Exception e) {
             logger.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage());
@@ -86,67 +86,67 @@ public class RefundService {
 
     // Get refund by ID
     @Transactional(readOnly = true)
-    public RefundResponse getRefundById(UUID refundId) {
+    public RefundResponseDto getRefundById(UUID refundId) {
         logger.debug("Fetching refund by ID: {}", refundId);
 
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with ID: " + refundId));
 
-        return RefundResponse.from(refund);
+        return RefundResponseDto.from(refund);
     }
 
     // Get refund by reference
     @Transactional(readOnly = true)
-    public RefundResponse getRefundByReference(String refundReference) {
+    public RefundResponseDto getRefundByReference(String refundReference) {
         logger.debug("Fetching refund by reference: {}", refundReference);
 
         Refund refund = refundRepository.findByRefundReference(refundReference)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with reference: " + refundReference));
 
-        return RefundResponse.from(refund);
+        return RefundResponseDto.from(refund);
     }
 
     // Get refunds by payment ID
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByPaymentId(UUID paymentId) {
+    public List<RefundResponseDto> getRefundsByPaymentId(UUID paymentId) {
         logger.debug("Fetching refunds for payment: {}", paymentId);
 
         return refundRepository.findByPaymentIdOrderByCreatedAtDesc(paymentId).stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get refunds by status
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByStatus(Refund.RefundStatus status) {
+    public List<RefundResponseDto> getRefundsByStatus(Refund.RefundStatus status) {
         logger.debug("Fetching refunds by status: {}", status);
 
         return refundRepository.findByStatusOrderByCreatedAtDesc(status).stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get all refunds with pagination
     @Transactional(readOnly = true)
-    public Page<RefundResponse> getAllRefunds(Pageable pageable) {
+    public Page<RefundResponseDto> getAllRefunds(Pageable pageable) {
         logger.debug("Fetching all refunds with pagination");
 
         return refundRepository.findAll(pageable)
-                .map(RefundResponse::from);
+                .map(RefundResponseDto::from);
     }
 
     // Get refunds by user
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByUser(UUID userId) {
+    public List<RefundResponseDto> getRefundsByUser(UUID userId) {
         logger.debug("Fetching refunds requested by user: {}", userId);
 
         return refundRepository.findByRequestedByOrderByCreatedAtDesc(userId).stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Approve refund
-    public RefundResponse approveRefund(UUID refundId, UUID approvedBy) {
+    public RefundResponseDto approveRefund(UUID refundId, UUID approvedBy) {
         logger.info("Approving refund: {} by user: {}", refundId, approvedBy);
 
         Refund refund = refundRepository.findById(refundId)
@@ -166,11 +166,11 @@ public class RefundService {
         processRefundAsync(approvedRefund);
 
         logger.info("Refund approved: {}", refundId);
-        return RefundResponse.from(approvedRefund);
+        return RefundResponseDto.from(approvedRefund);
     }
 
     // Reject refund
-    public RefundResponse rejectRefund(UUID refundId, String reason, UUID rejectedBy) {
+    public RefundResponseDto rejectRefund(UUID refundId, String reason, UUID rejectedBy) {
         logger.info("Rejecting refund: {} by user: {} reason: {}", refundId, rejectedBy, reason);
 
         Refund refund = refundRepository.findById(refundId)
@@ -188,36 +188,36 @@ public class RefundService {
         Refund rejectedRefund = refundRepository.save(refund);
         logger.info("Refund rejected: {}", refundId);
 
-        return RefundResponse.from(rejectedRefund);
+        return RefundResponseDto.from(rejectedRefund);
     }
 
     // Get pending refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getPendingRefunds() {
+    public List<RefundResponseDto> getPendingRefunds() {
         logger.debug("Fetching pending refunds");
 
         return refundRepository.findPendingRefunds().stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get completed refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getCompletedRefunds() {
+    public List<RefundResponseDto> getCompletedRefunds() {
         logger.debug("Fetching completed refunds");
 
         return refundRepository.findCompletedRefunds().stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get failed refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getFailedRefunds() {
+    public List<RefundResponseDto> getFailedRefunds() {
         logger.debug("Fetching failed refunds");
 
         return refundRepository.findFailedRefunds().stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -254,24 +254,24 @@ public class RefundService {
 
     // Search refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> searchRefunds(String searchTerm) {
+    public List<RefundResponseDto> searchRefunds(String searchTerm) {
         logger.debug("Searching refunds with term: {}", searchTerm);
 
         return refundRepository.searchRefundsByText(searchTerm).stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get refunds with filters
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsWithFilters(Refund.RefundStatus status, UUID requestedBy,
+    public List<RefundResponseDto> getRefundsWithFilters(Refund.RefundStatus status, UUID requestedBy,
                                                     UUID approvedBy, BigDecimal minAmount, BigDecimal maxAmount,
                                                     LocalDateTime startDate, LocalDateTime endDate) {
         logger.debug("Fetching refunds with filters");
 
         return refundRepository.findRefundsWithFilters(status, requestedBy, approvedBy,
                                                       minAmount, maxAmount, startDate, endDate).stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -322,7 +322,7 @@ public class RefundService {
         }
     }
 
-    private void validateRefundRequest(Payment payment, RefundRequest request) {
+    private void validateRefundRequest(Payment payment, RefundRequestDto request) {
         // Check if payment can be refunded
         if (!payment.canBeRefunded()) {
             throw new PaymentServiceException("Payment cannot be refunded");

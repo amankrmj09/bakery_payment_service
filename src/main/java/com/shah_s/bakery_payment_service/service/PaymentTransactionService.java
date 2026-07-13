@@ -1,6 +1,6 @@
 package com.shah_s.bakery_payment_service.service;
 
-import com.shah_s.bakery_payment_service.dto.PaymentTransactionResponse;
+import com.shah_s.bakery_payment_service.dto.PaymentTransactionResponseDto;
 import com.shah_s.bakery_payment_service.entity.Payment;
 import com.shah_s.bakery_payment_service.entity.PaymentTransaction;
 import com.shah_s.bakery_payment_service.exception.PaymentServiceException;
@@ -36,7 +36,7 @@ public class PaymentTransactionService {
     }
 
     // Create transaction
-    public PaymentTransactionResponse createTransaction(UUID paymentId, PaymentTransaction.TransactionType transactionType,
+    public PaymentTransactionResponseDto createTransaction(UUID paymentId, PaymentTransaction.TransactionType transactionType,
                                                       BigDecimal amount, String description) {
         logger.info("Creating transaction for payment: {} type: {} amount: {}", paymentId, transactionType, amount);
 
@@ -48,61 +48,61 @@ public class PaymentTransactionService {
         PaymentTransaction savedTransaction = paymentTransactionRepository.save(transaction);
         logger.info("Transaction created: {} for payment: {}", savedTransaction.getId(), paymentId);
 
-        return PaymentTransactionResponse.from(savedTransaction);
+        return PaymentTransactionResponseDto.from(savedTransaction);
     }
 
     // Get transaction by ID
     @Transactional(readOnly = true)
-    public PaymentTransactionResponse getTransactionById(UUID transactionId) {
+    public PaymentTransactionResponseDto getTransactionById(UUID transactionId) {
         logger.debug("Fetching transaction by ID: {}", transactionId);
 
         PaymentTransaction transaction = paymentTransactionRepository.findById(transactionId)
                 .orElseThrow(() -> new PaymentServiceException("Transaction not found with ID: " + transactionId));
 
-        return PaymentTransactionResponse.from(transaction);
+        return PaymentTransactionResponseDto.from(transaction);
     }
 
     // Get transactions by payment ID
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getTransactionsByPaymentId(UUID paymentId) {
+    public List<PaymentTransactionResponseDto> getTransactionsByPaymentId(UUID paymentId) {
         logger.debug("Fetching transactions for payment: {}", paymentId);
 
         return paymentTransactionRepository.findByPaymentIdOrderByCreatedAtDesc(paymentId).stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get transactions by status
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getTransactionsByStatus(PaymentTransaction.TransactionStatus status) {
+    public List<PaymentTransactionResponseDto> getTransactionsByStatus(PaymentTransaction.TransactionStatus status) {
         logger.debug("Fetching transactions by status: {}", status);
 
         return paymentTransactionRepository.findByStatusOrderByCreatedAtDesc(status).stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get transactions by type
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getTransactionsByType(PaymentTransaction.TransactionType transactionType) {
+    public List<PaymentTransactionResponseDto> getTransactionsByType(PaymentTransaction.TransactionType transactionType) {
         logger.debug("Fetching transactions by type: {}", transactionType);
 
         return paymentTransactionRepository.findByTransactionTypeOrderByCreatedAtDesc(transactionType).stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get transaction by gateway transaction ID
     @Transactional(readOnly = true)
-    public Optional<PaymentTransactionResponse> getTransactionByGatewayId(String gatewayTransactionId) {
+    public Optional<PaymentTransactionResponseDto> getTransactionByGatewayId(String gatewayTransactionId) {
         logger.debug("Fetching transaction by gateway ID: {}", gatewayTransactionId);
 
         return paymentTransactionRepository.findByGatewayTransactionId(gatewayTransactionId)
-                .map(PaymentTransactionResponse::from);
+                .map(PaymentTransactionResponseDto::from);
     }
 
     // Update transaction status
-    public PaymentTransactionResponse updateTransactionStatus(UUID transactionId,
+    public PaymentTransactionResponseDto updateTransactionStatus(UUID transactionId,
                                                            PaymentTransaction.TransactionStatus status,
                                                            String gatewayResponse) {
         logger.info("Updating transaction status: {} to {}", transactionId, status);
@@ -122,11 +122,11 @@ public class PaymentTransactionService {
         PaymentTransaction updatedTransaction = paymentTransactionRepository.save(transaction);
         logger.info("Transaction status updated: {}", transactionId);
 
-        return PaymentTransactionResponse.from(updatedTransaction);
+        return PaymentTransactionResponseDto.from(updatedTransaction);
     }
 
     // Mark transaction as failed
-    public PaymentTransactionResponse failTransaction(UUID transactionId, String failureReason, String failureCode) {
+    public PaymentTransactionResponseDto failTransaction(UUID transactionId, String failureReason, String failureCode) {
         logger.info("Failing transaction: {} reason: {}", transactionId, failureReason);
 
         PaymentTransaction transaction = paymentTransactionRepository.findById(transactionId)
@@ -140,37 +140,37 @@ public class PaymentTransactionService {
         PaymentTransaction failedTransaction = paymentTransactionRepository.save(transaction);
         logger.info("Transaction failed: {}", transactionId);
 
-        return PaymentTransactionResponse.from(failedTransaction);
+        return PaymentTransactionResponseDto.from(failedTransaction);
     }
 
     // Get pending transactions
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getPendingTransactions() {
+    public List<PaymentTransactionResponseDto> getPendingTransactions() {
         logger.debug("Fetching pending transactions");
 
         return paymentTransactionRepository.findPendingTransactions().stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get failed transactions
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getFailedTransactions() {
+    public List<PaymentTransactionResponseDto> getFailedTransactions() {
         logger.debug("Fetching failed transactions");
 
         return paymentTransactionRepository.findFailedTransactions().stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get old pending transactions (for cleanup)
     @Transactional(readOnly = true)
-    public List<PaymentTransactionResponse> getOldPendingTransactions(int minutes) {
+    public List<PaymentTransactionResponseDto> getOldPendingTransactions(int minutes) {
         logger.debug("Fetching pending transactions older than {} minutes", minutes);
 
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(minutes);
         return paymentTransactionRepository.findPendingTransactionsOlderThan(cutoffTime).stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -184,12 +184,12 @@ public class PaymentTransactionService {
 
     // Get latest transaction by payment and type
     @Transactional(readOnly = true)
-    public Optional<PaymentTransactionResponse> getLatestTransactionByPaymentAndType(UUID paymentId,
+    public Optional<PaymentTransactionResponseDto> getLatestTransactionByPaymentAndType(UUID paymentId,
                                                                                    PaymentTransaction.TransactionType transactionType) {
         logger.debug("Fetching latest transaction for payment {} and type {}", paymentId, transactionType);
 
         return paymentTransactionRepository.findLatestByPaymentAndType(paymentId, transactionType)
-                .map(PaymentTransactionResponse::from);
+                .map(PaymentTransactionResponseDto::from);
     }
 
     // Get transaction statistics

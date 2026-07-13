@@ -1,7 +1,7 @@
 package com.shah_s.bakery_payment_service.controller;
 
-import com.shah_s.bakery_payment_service.dto.RefundRequest;
-import com.shah_s.bakery_payment_service.dto.RefundResponse;
+import com.shah_s.bakery_payment_service.dto.RefundRequestDto;
+import com.shah_s.bakery_payment_service.dto.RefundResponseDto;
 import com.shah_s.bakery_payment_service.entity.Refund;
 import com.shah_s.bakery_payment_service.service.RefundService;
 import jakarta.validation.Valid;
@@ -39,8 +39,8 @@ public class RefundController {
 
     // Create refund
     @PostMapping
-    public ResponseEntity<RefundResponse> createRefund(
-            @Valid @RequestBody RefundRequest request,
+    public ResponseEntity<RefundResponseDto> createRefund(
+            @Valid @RequestBody RefundRequestDto request,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -51,7 +51,7 @@ public class RefundController {
             request.setRequestedBy(userId);
         }
 
-        RefundResponse refund = refundService.createRefund(request);
+        RefundResponseDto refund = refundService.createRefund(request);
 
         logger.info("Refund created successfully: {}", refund.getRefundReference());
         return ResponseEntity.status(HttpStatus.CREATED).body(refund);
@@ -59,7 +59,7 @@ public class RefundController {
 
     // Get all refunds with pagination
     @GetMapping
-    public ResponseEntity<Page<RefundResponse>> getAllRefunds(
+    public ResponseEntity<Page<RefundResponseDto>> getAllRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -76,7 +76,7 @@ public class RefundController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<RefundResponse> refunds = refundService.getAllRefunds(pageable);
+        Page<RefundResponseDto> refunds = refundService.getAllRefunds(pageable);
 
         logger.info("Retrieved {} refunds (page {} of {})", refunds.getContent().size(),
                    page + 1, refunds.getTotalPages());
@@ -85,14 +85,14 @@ public class RefundController {
 
     // Get refund by ID
     @GetMapping("/{refundId}")
-    public ResponseEntity<RefundResponse> getRefundById(
+    public ResponseEntity<RefundResponseDto> getRefundById(
             @PathVariable UUID refundId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get refund by ID request received: {}", refundId);
 
-        RefundResponse refund = refundService.getRefundById(refundId);
+        RefundResponseDto refund = refundService.getRefundById(refundId);
 
         // Check if user can access this refund (unless admin)
         if (userId != null && !"ADMIN".equals(userRole) && !refund.getRequestedBy().equals(userId)) {
@@ -105,14 +105,14 @@ public class RefundController {
 
     // Get refund by reference
     @GetMapping("/reference/{refundReference}")
-    public ResponseEntity<RefundResponse> getRefundByReference(
+    public ResponseEntity<RefundResponseDto> getRefundByReference(
             @PathVariable String refundReference,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get refund by reference request received: {}", refundReference);
 
-        RefundResponse refund = refundService.getRefundByReference(refundReference);
+        RefundResponseDto refund = refundService.getRefundByReference(refundReference);
 
         // Check if user can access this refund (unless admin)
         if (userId != null && !"ADMIN".equals(userRole) && !refund.getRequestedBy().equals(userId)) {
@@ -125,14 +125,14 @@ public class RefundController {
 
     // Get refunds by payment ID
     @GetMapping("/payment/{paymentId}")
-    public ResponseEntity<List<RefundResponse>> getRefundsByPaymentId(
+    public ResponseEntity<List<RefundResponseDto>> getRefundsByPaymentId(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get refunds by payment ID request received: {}", paymentId);
 
-        List<RefundResponse> refunds = refundService.getRefundsByPaymentId(paymentId);
+        List<RefundResponseDto> refunds = refundService.getRefundsByPaymentId(paymentId);
 
         // Check if user can access these refunds (unless admin)
         if (userId != null && !"ADMIN".equals(userRole)) {
@@ -147,7 +147,7 @@ public class RefundController {
 
     // Get refunds by user
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<RefundResponse>> getRefundsByUser(
+    public ResponseEntity<List<RefundResponseDto>> getRefundsByUser(
             @PathVariable UUID userId,
             @RequestHeader(value = "X-User-Id", required = false) UUID requestUserId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -159,7 +159,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getRefundsByUser(userId);
+        List<RefundResponseDto> refunds = refundService.getRefundsByUser(userId);
 
         logger.info("Retrieved {} refunds for user", refunds.size());
         return ResponseEntity.ok(refunds);
@@ -167,7 +167,7 @@ public class RefundController {
 
     // Get refunds by status
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<RefundResponse>> getRefundsByStatus(
+    public ResponseEntity<List<RefundResponseDto>> getRefundsByStatus(
             @PathVariable Refund.RefundStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -178,7 +178,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getRefundsByStatus(status);
+        List<RefundResponseDto> refunds = refundService.getRefundsByStatus(status);
 
         logger.info("Retrieved {} refunds with status {}", refunds.size(), status);
         return ResponseEntity.ok(refunds);
@@ -186,7 +186,7 @@ public class RefundController {
 
     // Approve refund
     @PostMapping("/{refundId}/approve")
-    public ResponseEntity<RefundResponse> approveRefund(
+    public ResponseEntity<RefundResponseDto> approveRefund(
             @PathVariable UUID refundId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -198,7 +198,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        RefundResponse refund = refundService.approveRefund(refundId, userId);
+        RefundResponseDto refund = refundService.approveRefund(refundId, userId);
 
         logger.info("Refund approved successfully: {}", refundId);
         return ResponseEntity.ok(refund);
@@ -206,7 +206,7 @@ public class RefundController {
 
     // Reject refund
     @PostMapping("/{refundId}/reject")
-    public ResponseEntity<RefundResponse> rejectRefund(
+    public ResponseEntity<RefundResponseDto> rejectRefund(
             @PathVariable UUID refundId,
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
@@ -220,7 +220,7 @@ public class RefundController {
         }
 
         String reason = request.get("reason");
-        RefundResponse refund = refundService.rejectRefund(refundId, reason, userId);
+        RefundResponseDto refund = refundService.rejectRefund(refundId, reason, userId);
 
         logger.info("Refund rejected successfully: {}", refundId);
         return ResponseEntity.ok(refund);
@@ -228,7 +228,7 @@ public class RefundController {
 
     // Get pending refunds
     @GetMapping("/pending")
-    public ResponseEntity<List<RefundResponse>> getPendingRefunds(
+    public ResponseEntity<List<RefundResponseDto>> getPendingRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get pending refunds request received");
@@ -238,7 +238,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getPendingRefunds();
+        List<RefundResponseDto> refunds = refundService.getPendingRefunds();
 
         logger.info("Retrieved {} pending refunds", refunds.size());
         return ResponseEntity.ok(refunds);
@@ -246,7 +246,7 @@ public class RefundController {
 
     // Get completed refunds
     @GetMapping("/completed")
-    public ResponseEntity<List<RefundResponse>> getCompletedRefunds(
+    public ResponseEntity<List<RefundResponseDto>> getCompletedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get completed refunds request received");
@@ -256,7 +256,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getCompletedRefunds();
+        List<RefundResponseDto> refunds = refundService.getCompletedRefunds();
 
         logger.info("Retrieved {} completed refunds", refunds.size());
         return ResponseEntity.ok(refunds);
@@ -264,7 +264,7 @@ public class RefundController {
 
     // Get failed refunds
     @GetMapping("/failed")
-    public ResponseEntity<List<RefundResponse>> getFailedRefunds(
+    public ResponseEntity<List<RefundResponseDto>> getFailedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get failed refunds request received");
@@ -274,7 +274,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getFailedRefunds();
+        List<RefundResponseDto> refunds = refundService.getFailedRefunds();
 
         logger.info("Retrieved {} failed refunds", refunds.size());
         return ResponseEntity.ok(refunds);
@@ -282,7 +282,7 @@ public class RefundController {
 
     // Search refunds
     @GetMapping("/search")
-    public ResponseEntity<List<RefundResponse>> searchRefunds(
+    public ResponseEntity<List<RefundResponseDto>> searchRefunds(
             @RequestParam String query,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -293,7 +293,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.searchRefunds(query);
+        List<RefundResponseDto> refunds = refundService.searchRefunds(query);
 
         logger.info("Search returned {} refunds", refunds.size());
         return ResponseEntity.ok(refunds);
@@ -301,7 +301,7 @@ public class RefundController {
 
     // Advanced search with filters
     @GetMapping("/filter")
-    public ResponseEntity<List<RefundResponse>> getRefundsWithFilters(
+    public ResponseEntity<List<RefundResponseDto>> getRefundsWithFilters(
             @RequestParam(required = false) Refund.RefundStatus status,
             @RequestParam(required = false) UUID requestedBy,
             @RequestParam(required = false) UUID approvedBy,
@@ -318,7 +318,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<RefundResponse> refunds = refundService.getRefundsWithFilters(
+        List<RefundResponseDto> refunds = refundService.getRefundsWithFilters(
                 status, requestedBy, approvedBy, minAmount, maxAmount, startDate, endDate);
 
         logger.info("Filter search returned {} refunds", refunds.size());

@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PaymentStatusUpdateRequest {
+public class PaymentStatusUpdateRequestDto {
 
     // Getters and Setters
     @NotNull(message = "Status is required")
@@ -23,9 +23,9 @@ public class PaymentStatusUpdateRequest {
     private String gatewayResponse;
 
     // Constructors
-    public PaymentStatusUpdateRequest() {}
+    public PaymentStatusUpdateRequestDto() {}
 
-    public PaymentStatusUpdateRequest(Payment.PaymentStatus status, String reason) {
+    public PaymentStatusUpdateRequestDto(Payment.PaymentStatus status, String reason) {
         this.status = status;
         this.reason = reason;
     }

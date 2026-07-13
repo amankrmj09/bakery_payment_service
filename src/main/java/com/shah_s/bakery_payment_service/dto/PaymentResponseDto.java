@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class PaymentResponse {
+public class PaymentResponseDto {
 
     // Getters and Setters (abbreviated for space)
     private UUID id;
@@ -41,8 +41,8 @@ public class PaymentResponse {
     private BigDecimal gatewayFee;
     private BigDecimal netAmount;
     private LocalDateTime settlementDate;
-    private List<PaymentTransactionResponse> transactions;
-    private List<RefundResponse> refunds;
+    private List<PaymentTransactionResponseDto> transactions;
+    private List<RefundResponseDto> refunds;
     private BigDecimal totalRefundedAmount;
     private BigDecimal refundableAmount;
     private Boolean canBeRefunded;
@@ -59,11 +59,11 @@ public class PaymentResponse {
     private Map<String, Object> metadata;
 
     // Constructors
-    public PaymentResponse() {}
+    public PaymentResponseDto() {}
 
     // Static factory method
-    public static PaymentResponse from(Payment payment) {
-        PaymentResponse response = new PaymentResponse();
+    public static PaymentResponseDto from(Payment payment) {
+        PaymentResponseDto response = new PaymentResponseDto();
         response.id = payment.getId();
         response.paymentReference = payment.getPaymentReference();
         response.orderId = payment.getOrderId();
@@ -90,10 +90,10 @@ public class PaymentResponse {
         response.netAmount = payment.getNetAmount();
         response.settlementDate = payment.getSettlementDate();
         response.transactions = payment.getTransactions().stream()
-                .map(PaymentTransactionResponse::from)
+                .map(PaymentTransactionResponseDto::from)
                 .collect(Collectors.toList());
         response.refunds = payment.getRefunds().stream()
-                .map(RefundResponse::from)
+                .map(RefundResponseDto::from)
                 .collect(Collectors.toList());
         response.totalRefundedAmount = payment.getTotalRefundedAmount();
         response.refundableAmount = payment.getRefundableAmount();

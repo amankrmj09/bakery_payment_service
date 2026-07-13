@@ -1,6 +1,6 @@
 package com.shah_s.bakery_payment_service.controller;
 
-import com.shah_s.bakery_payment_service.dto.PaymentTransactionResponse;
+import com.shah_s.bakery_payment_service.dto.PaymentTransactionResponseDto;
 import com.shah_s.bakery_payment_service.entity.PaymentTransaction;
 import com.shah_s.bakery_payment_service.service.PaymentTransactionService;
 import org.slf4j.Logger;
@@ -32,13 +32,13 @@ public class TransactionController {
 
     // Get transaction by ID
     @GetMapping("/{transactionId}")
-    public ResponseEntity<PaymentTransactionResponse> getTransactionById(
+    public ResponseEntity<PaymentTransactionResponseDto> getTransactionById(
             @PathVariable UUID transactionId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get transaction by ID request received: {}", transactionId);
 
-        PaymentTransactionResponse transaction = paymentTransactionService.getTransactionById(transactionId);
+        PaymentTransactionResponseDto transaction = paymentTransactionService.getTransactionById(transactionId);
 
         logger.info("Transaction retrieved: {}", transactionId);
         return ResponseEntity.ok(transaction);
@@ -46,13 +46,13 @@ public class TransactionController {
 
     // Get transactions by payment ID
     @GetMapping("/payment/{paymentId}")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByPaymentId(
+    public ResponseEntity<List<PaymentTransactionResponseDto>> getTransactionsByPaymentId(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get transactions by payment ID request received: {}", paymentId);
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByPaymentId(paymentId);
+        List<PaymentTransactionResponseDto> transactions = paymentTransactionService.getTransactionsByPaymentId(paymentId);
 
         logger.info("Retrieved {} transactions for payment", transactions.size());
         return ResponseEntity.ok(transactions);
@@ -60,7 +60,7 @@ public class TransactionController {
 
     // Get transactions by status
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByStatus(
+    public ResponseEntity<List<PaymentTransactionResponseDto>> getTransactionsByStatus(
             @PathVariable PaymentTransaction.TransactionStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -71,7 +71,7 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByStatus(status);
+        List<PaymentTransactionResponseDto> transactions = paymentTransactionService.getTransactionsByStatus(status);
 
         logger.info("Retrieved {} transactions with status {}", transactions.size(), status);
         return ResponseEntity.ok(transactions);
@@ -79,7 +79,7 @@ public class TransactionController {
 
     // Get transactions by type
     @GetMapping("/type/{type}")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByType(
+    public ResponseEntity<List<PaymentTransactionResponseDto>> getTransactionsByType(
             @PathVariable PaymentTransaction.TransactionType type,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -90,7 +90,7 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByType(type);
+        List<PaymentTransactionResponseDto> transactions = paymentTransactionService.getTransactionsByType(type);
 
         logger.info("Retrieved {} transactions with type {}", transactions.size(), type);
         return ResponseEntity.ok(transactions);
@@ -98,7 +98,7 @@ public class TransactionController {
 
     // Get pending transactions
     @GetMapping("/pending")
-    public ResponseEntity<List<PaymentTransactionResponse>> getPendingTransactions(
+    public ResponseEntity<List<PaymentTransactionResponseDto>> getPendingTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get pending transactions request received");
@@ -108,7 +108,7 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getPendingTransactions();
+        List<PaymentTransactionResponseDto> transactions = paymentTransactionService.getPendingTransactions();
 
         logger.info("Retrieved {} pending transactions", transactions.size());
         return ResponseEntity.ok(transactions);
@@ -116,7 +116,7 @@ public class TransactionController {
 
     // Get failed transactions
     @GetMapping("/failed")
-    public ResponseEntity<List<PaymentTransactionResponse>> getFailedTransactions(
+    public ResponseEntity<List<PaymentTransactionResponseDto>> getFailedTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get failed transactions request received");
@@ -126,7 +126,7 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getFailedTransactions();
+        List<PaymentTransactionResponseDto> transactions = paymentTransactionService.getFailedTransactions();
 
         logger.info("Retrieved {} failed transactions", transactions.size());
         return ResponseEntity.ok(transactions);

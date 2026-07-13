@@ -9,7 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.devofblue.common.exception.ErrorResponse;
+import org.devofblue.common.exception.ErrorResponseDto;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
@@ -22,10 +22,10 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(PaymentServiceException.class)
-    public ResponseEntity<ErrorResponse> handlePaymentServiceException(PaymentServiceException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponseDto> handlePaymentServiceException(PaymentServiceException ex, WebRequest request) {
         logger.error("Payment service error: {}", ex.getMessage());
 
-        ErrorResponse error = new ErrorResponse(
+        ErrorResponseDto error = new ErrorResponseDto(
             "PAYMENT_SERVICE_ERROR",
             ex.getMessage(),
             LocalDateTime.now(),
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ErrorResponse> handleFeignException(FeignException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponseDto> handleFeignException(FeignException ex, WebRequest request) {
         logger.error("External service error: {}", ex.getMessage());
 
         String message = "External service unavailable";
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
             status = HttpStatus.BAD_REQUEST;
         }
 
-        ErrorResponse error = new ErrorResponse(
+        ErrorResponseDto error = new ErrorResponseDto(
             "EXTERNAL_SERVICE_ERROR",
             message,
             LocalDateTime.now(),
@@ -67,18 +67,18 @@ public class GlobalExceptionHandler {
     // Error Response Class
     
     @ExceptionHandler(PaymentNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handlePaymentNotFoundException(PaymentNotFoundException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse("PAYMENT_NOT_FOUND", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+    public ResponseEntity<ErrorResponseDto> handlePaymentNotFoundException(PaymentNotFoundException ex, WebRequest request) {
+        ErrorResponseDto error = new ErrorResponseDto("PAYMENT_NOT_FOUND", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
     @ExceptionHandler(OrderNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleOrderNotFoundException(OrderNotFoundException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse("ORDER_NOT_FOUND", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+    public ResponseEntity<ErrorResponseDto> handleOrderNotFoundException(OrderNotFoundException ex, WebRequest request) {
+        ErrorResponseDto error = new ErrorResponseDto("ORDER_NOT_FOUND", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
     @ExceptionHandler({InvalidPaymentAmountException.class, InvalidPaymentStatusException.class, InvalidRefundException.class})
-    public ResponseEntity<ErrorResponse> handleInvalidPaymentException(RuntimeException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse("INVALID_PAYMENT_REQUEST", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+    public ResponseEntity<ErrorResponseDto> handleInvalidPaymentException(RuntimeException ex, WebRequest request) {
+        ErrorResponseDto error = new ErrorResponseDto("INVALID_PAYMENT_REQUEST", ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 

@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class RefundRequest {
+public class RefundRequestDto {
 
     // Getters and Setters
     @NotNull(message = "Payment ID is required")
@@ -33,9 +33,9 @@ public class RefundRequest {
     private Map<String, Object> metadata;
 
     // Constructors
-    public RefundRequest() {}
+    public RefundRequestDto() {}
 
-    public RefundRequest(UUID paymentId, BigDecimal amount, String reason, UUID requestedBy) {
+    public RefundRequestDto(UUID paymentId, BigDecimal amount, String reason, UUID requestedBy) {
         this.paymentId = paymentId;
         this.amount = amount;
         this.reason = reason;
