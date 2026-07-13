@@ -19,3 +19,8 @@ payment:
       client-secret: ${PAYPAL_CLIENT_SECRET}
     square:
       access-token: ${SQUARE_ACCESS_TOKEN}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
