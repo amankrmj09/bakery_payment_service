@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -58,6 +59,7 @@ public class PaymentController {
 
     // Get all payments with pagination
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<PaymentResponseDto>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -164,6 +166,7 @@ public class PaymentController {
 
     // Get payments by status
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentResponseDto>> getPaymentsByStatus(
             @PathVariable Payment.PaymentStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -183,6 +186,7 @@ public class PaymentController {
 
     // Update payment status
     @PatchMapping("/{paymentId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PaymentResponseDto> updatePaymentStatus(
             @PathVariable UUID paymentId,
             @Valid @RequestBody PaymentStatusUpdateRequestDto request,
@@ -251,6 +255,7 @@ public class PaymentController {
 
     // Get payment statistics
     @GetMapping("/statistics")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getPaymentStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -279,12 +284,7 @@ public class PaymentController {
 
     // Health check
     @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "payment-service-payments");
-        response.put("timestamp", LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<org.devofblue.common.dto.HealthResponseDto> health() {
+        return ResponseEntity.ok(new org.devofblue.common.dto.HealthResponseDto("UP", "payment-service-payments"));
     }
 }

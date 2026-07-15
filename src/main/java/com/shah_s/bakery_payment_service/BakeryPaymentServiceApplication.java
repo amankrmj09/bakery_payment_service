@@ -4,13 +4,15 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.devofblue.common.security.MethodSecurityConfig;
+import org.devofblue.common.security.FeignClientInterceptor;
+import org.devofblue.common.kafka.KafkaConfig;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@Import(MethodSecurityConfig.class)
+@Import({MethodSecurityConfig.class, FeignClientInterceptor.class, KafkaConfig.class, org.devofblue.common.feign.FeignConfig.class})
 @EnableAsync
 @EnableScheduling
 @EnableDiscoveryClient

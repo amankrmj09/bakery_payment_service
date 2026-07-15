@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -59,6 +60,7 @@ public class RefundController {
 
     // Get all refunds with pagination
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<RefundResponseDto>> getAllRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -167,6 +169,7 @@ public class RefundController {
 
     // Get refunds by status
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> getRefundsByStatus(
             @PathVariable Refund.RefundStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -186,6 +189,7 @@ public class RefundController {
 
     // Approve refund
     @PostMapping("/{refundId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RefundResponseDto> approveRefund(
             @PathVariable UUID refundId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
@@ -206,6 +210,7 @@ public class RefundController {
 
     // Reject refund
     @PostMapping("/{refundId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RefundResponseDto> rejectRefund(
             @PathVariable UUID refundId,
             @RequestBody Map<String, String> request,
@@ -228,6 +233,7 @@ public class RefundController {
 
     // Get pending refunds
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> getPendingRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -246,6 +252,7 @@ public class RefundController {
 
     // Get completed refunds
     @GetMapping("/completed")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> getCompletedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -264,6 +271,7 @@ public class RefundController {
 
     // Get failed refunds
     @GetMapping("/failed")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> getFailedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -282,6 +290,7 @@ public class RefundController {
 
     // Search refunds
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> searchRefunds(
             @RequestParam String query,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -301,6 +310,7 @@ public class RefundController {
 
     // Advanced search with filters
     @GetMapping("/filter")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<RefundResponseDto>> getRefundsWithFilters(
             @RequestParam(required = false) Refund.RefundStatus status,
             @RequestParam(required = false) UUID requestedBy,
@@ -327,6 +337,7 @@ public class RefundController {
 
     // Get refund statistics
     @GetMapping("/statistics")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getRefundStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -355,12 +366,7 @@ public class RefundController {
 
     // Health check
     @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "payment-service-refunds");
-        response.put("timestamp", LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<org.devofblue.common.dto.HealthResponseDto> health() {
+        return ResponseEntity.ok(new org.devofblue.common.dto.HealthResponseDto("UP", "payment-service-refunds"));
     }
 }

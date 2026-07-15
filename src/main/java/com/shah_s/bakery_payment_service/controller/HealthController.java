@@ -24,22 +24,21 @@ public class HealthController {
 
     // Main service health check
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "bakery-payment-service");
-        response.put("timestamp", LocalDateTime.now().toString());
-        response.put("version", "1.0.0");
+    public ResponseEntity<org.devofblue.common.dto.HealthResponseDto> health() {
+        org.devofblue.common.dto.HealthResponseDto response = new org.devofblue.common.dto.HealthResponseDto("UP", "bakery-payment-service");
+        Map<String, Object> details = new HashMap<>();
+        details.put("version", "1.0.0");
 
         // Check database connectivity
         try (Connection connection = dataSource.getConnection()) {
-            response.put("database", "UP");
-            response.put("databaseUrl", connection.getMetaData().getURL());
+            details.put("database", "UP");
+            details.put("databaseUrl", connection.getMetaData().getURL());
         } catch (Exception e) {
-            response.put("database", "DOWN");
-            response.put("databaseError", e.getMessage());
+            details.put("database", "DOWN");
+            details.put("databaseError", e.getMessage());
         }
 
+        response.setDetails(details);
         return ResponseEntity.ok(response);
     }
 

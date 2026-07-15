@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -60,6 +61,7 @@ public class TransactionController {
 
     // Get transactions by status
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentTransactionResponseDto>> getTransactionsByStatus(
             @PathVariable PaymentTransaction.TransactionStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -79,6 +81,7 @@ public class TransactionController {
 
     // Get transactions by type
     @GetMapping("/type/{type}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentTransactionResponseDto>> getTransactionsByType(
             @PathVariable PaymentTransaction.TransactionType type,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -98,6 +101,7 @@ public class TransactionController {
 
     // Get pending transactions
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentTransactionResponseDto>> getPendingTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -116,6 +120,7 @@ public class TransactionController {
 
     // Get failed transactions
     @GetMapping("/failed")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentTransactionResponseDto>> getFailedTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -134,6 +139,7 @@ public class TransactionController {
 
     // Get transaction statistics
     @GetMapping("/statistics")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getTransactionStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -162,12 +168,7 @@ public class TransactionController {
 
     // Health check
     @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "payment-service-transactions");
-        response.put("timestamp", LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<org.devofblue.common.dto.HealthResponseDto> health() {
+        return ResponseEntity.ok(new org.devofblue.common.dto.HealthResponseDto("UP", "payment-service-transactions"));
     }
 }
