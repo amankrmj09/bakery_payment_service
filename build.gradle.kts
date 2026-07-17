@@ -61,9 +61,12 @@ dependencies {
 	implementation("org.apache.httpcomponents.client5:httpclient5:5.5")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.4")
 
-	// 8. Tooling & Lombok
+	// 8. Tooling & Lombok & MapStruct
+	implementation("org.mapstruct:mapstruct:1.6.0.Beta1")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.0.Beta1")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.springframework.boot:spring-boot-docker-compose")
 	// runtimeOnly("io.micrometer:micrometer-registry-prometheus")

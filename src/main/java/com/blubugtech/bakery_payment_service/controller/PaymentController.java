@@ -1,6 +1,10 @@
 package com.blubugtech.bakery_payment_service.controller;
 
-import com.blubugtech.bakery_payment_service.dto.*;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
+
+import com.blubugtech.bakery_payment_service.dto.payment.*;
+import com.blubugtech.bakery_payment_service.dto.refund.*;
+import com.blubugtech.bakery_payment_service.dto.transaction.*;
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
 import jakarta.validation.Valid;
@@ -42,8 +46,8 @@ public class PaymentController {
 
     // Create payment
     @PostMapping
-    public ResponseEntity<PaymentResponseDto> createPayment(
-            @Valid @RequestBody PaymentRequestDto request,
+    public ResponseEntity<PaymentResponse> createPayment(
+            @Valid @RequestBody PaymentRequest request,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -54,7 +58,7 @@ public class PaymentController {
             request.setUserId(userId);
         }
 
-        PaymentResponseDto payment = paymentService.createPayment(request);
+        PaymentResponse payment = paymentService.createPayment(request);
 
         logger.info("Payment created successfully: {}", payment.getPaymentReference());
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
@@ -63,7 +67,7 @@ public class PaymentController {
     // Get all payments with pagination
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<PaymentResponseDto>> getAllPayments(
+    public ResponseEntity<Page<PaymentResponse>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -80,7 +84,7 @@ public class PaymentController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<PaymentResponseDto> payments = paymentService.getAllPayments(pageable);
+        Page<PaymentResponse> payments = paymentService.getAllPayments(pageable);
 
         logger.info("Retrieved {} payments (page {} of {})", payments.getContent().size(),
                    page + 1, payments.getTotalPages());
@@ -89,14 +93,14 @@ public class PaymentController {
 
     // Get payment by ID
     @GetMapping("/{paymentId}")
-    public ResponseEntity<PaymentResponseDto> getPaymentById(
+    public ResponseEntity<PaymentResponse> getPaymentById(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get payment by ID request received: {}", paymentId);
 
-        PaymentResponseDto payment = paymentService.getPaymentById(paymentId);
+        PaymentResponse payment = paymentService.getPaymentById(paymentId);
 
         // Check if user can access this payment (unless admin)
         if (userId != null && !"ADMIN".equals(userRole) && !payment.getUserId().equals(userId)) {
@@ -109,14 +113,14 @@ public class PaymentController {
 
     // Get payment by reference
     @GetMapping("/reference/{paymentReference}")
-    public ResponseEntity<PaymentResponseDto> getPaymentByReference(
+    public ResponseEntity<PaymentResponse> getPaymentByReference(
             @PathVariable String paymentReference,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get payment by reference request received: {}", paymentReference);
 
-        PaymentResponseDto payment = paymentService.getPaymentByReference(paymentReference);
+        PaymentResponse payment = paymentService.getPaymentByReference(paymentReference);
 
         // Check if user can access this payment (unless admin)
         if (userId != null && !"ADMIN".equals(userRole) && !payment.getUserId().equals(userId)) {
@@ -129,14 +133,14 @@ public class PaymentController {
 
     // Get payment by order ID
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<PaymentResponseDto> getPaymentByOrderId(
+    public ResponseEntity<PaymentResponse> getPaymentByOrderId(
             @PathVariable UUID orderId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get payment by order ID request received: {}", orderId);
 
-        PaymentResponseDto payment = paymentService.getPaymentByOrderId(orderId);
+        PaymentResponse payment = paymentService.getPaymentByOrderId(orderId);
 
         // Check if user can access this payment (unless admin)
         if (userId != null && !"ADMIN".equals(userRole) && !payment.getUserId().equals(userId)) {
@@ -149,7 +153,7 @@ public class PaymentController {
 
     // Get payments by user ID
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PaymentResponseDto>> getPaymentsByUserId(
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByUserId(
             @PathVariable UUID userId,
             @RequestHeader(value = "X-User-Id", required = false) UUID requestUserId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -161,7 +165,7 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<PaymentResponseDto> payments = paymentService.getPaymentsByUserId(userId);
+        List<PaymentResponse> payments = paymentService.getPaymentsByUserId(userId);
 
         logger.info("Retrieved {} payments for user", payments.size());
         return ResponseEntity.ok(payments);
@@ -170,8 +174,8 @@ public class PaymentController {
     // Get payments by status
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentResponseDto>> getPaymentsByStatus(
-            @PathVariable Payment.PaymentStatus status,
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByStatus(
+            @PathVariable PaymentStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Get payments by status request received: {}", status);
@@ -181,7 +185,7 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<PaymentResponseDto> payments = paymentService.getPaymentsByStatus(status);
+        List<PaymentResponse> payments = paymentService.getPaymentsByStatus(status);
 
         logger.info("Retrieved {} payments with status {}", payments.size(), status);
         return ResponseEntity.ok(payments);
@@ -190,9 +194,9 @@ public class PaymentController {
     // Update payment status
     @PatchMapping("/{paymentId}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PaymentResponseDto> updatePaymentStatus(
+    public ResponseEntity<PaymentResponse> updatePaymentStatus(
             @PathVariable UUID paymentId,
-            @Valid @RequestBody PaymentStatusUpdateRequestDto request,
+            @Valid @RequestBody PaymentStatusUpdateRequest request,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         logger.info("Update payment status request received: {} to {}", paymentId, request.getStatus());
@@ -202,7 +206,7 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        PaymentResponseDto payment = paymentService.updatePaymentStatus(paymentId, request);
+        PaymentResponse payment = paymentService.updatePaymentStatus(paymentId, request);
 
         logger.info("Payment status updated successfully: {}", paymentId);
         return ResponseEntity.ok(payment);
@@ -210,7 +214,7 @@ public class PaymentController {
 
     // Cancel payment
     @PostMapping("/{paymentId}/cancel")
-    public ResponseEntity<PaymentResponseDto> cancelPayment(
+    public ResponseEntity<PaymentResponse> cancelPayment(
             @PathVariable UUID paymentId,
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
@@ -220,14 +224,14 @@ public class PaymentController {
 
         // Check if user can cancel this payment
         if (userId != null && !"ADMIN".equals(userRole)) {
-            PaymentResponseDto existingPayment = paymentService.getPaymentById(paymentId);
+            PaymentResponse existingPayment = paymentService.getPaymentById(paymentId);
             if (!existingPayment.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
         }
 
         String reason = request.get("reason");
-        PaymentResponseDto payment = paymentService.cancelPayment(paymentId, reason);
+        PaymentResponse payment = paymentService.cancelPayment(paymentId, reason);
 
         logger.info("Payment cancelled successfully: {}", paymentId);
         return ResponseEntity.ok(payment);
@@ -235,7 +239,7 @@ public class PaymentController {
 
     // Retry payment
     @PostMapping("/{paymentId}/retry")
-    public ResponseEntity<PaymentResponseDto> retryPayment(
+    public ResponseEntity<PaymentResponse> retryPayment(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -244,13 +248,13 @@ public class PaymentController {
 
         // Check if user can retry this payment
         if (userId != null && !"ADMIN".equals(userRole)) {
-            PaymentResponseDto existingPayment = paymentService.getPaymentById(paymentId);
+            PaymentResponse existingPayment = paymentService.getPaymentById(paymentId);
             if (!existingPayment.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
         }
 
-        PaymentResponseDto payment = paymentService.retryPayment(paymentId);
+        PaymentResponse payment = paymentService.retryPayment(paymentId);
 
         logger.info("Payment retry initiated: {}", paymentId);
         return ResponseEntity.ok(payment);
@@ -287,7 +291,7 @@ public class PaymentController {
 
     // Health check
     @GetMapping("/health")
-    public ResponseEntity<com.blubugtech.common.dto.HealthResponseDto> health() {
-        return ResponseEntity.ok(new com.blubugtech.common.dto.HealthResponseDto("UP", "payment-service-payments"));
+    public ResponseEntity<com.blubugtech.common.contract.feign.HealthResponse> health() {
+        return ResponseEntity.ok(new com.blubugtech.common.contract.feign.HealthResponse("UP", "payment-service-payments"));
     }
 }

@@ -1,5 +1,9 @@
 package com.blubugtech.bakery_payment_service.repository;
 
+import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
+import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
+
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,24 +43,24 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByGatewayPaymentId(String gatewayPaymentId);
 
     // Find payments by status
-    List<Payment> findByStatusOrderByCreatedAtDesc(Payment.PaymentStatus status);
+    List<Payment> findByStatusOrderByCreatedAtDesc(PaymentStatus status);
 
     // Find payments by status with pagination
-    Page<Payment> findByStatus(Payment.PaymentStatus status, Pageable pageable);
+    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
 
     // Find payments by multiple statuses
     @Query("SELECT p FROM Payment p WHERE p.status IN :statuses ORDER BY p.createdAt DESC")
-    List<Payment> findByStatusIn(@Param("statuses") List<Payment.PaymentStatus> statuses);
+    List<Payment> findByStatusIn(@Param("statuses") List<PaymentStatus> statuses);
 
     // Find payments by payment method
-    List<Payment> findByPaymentMethodOrderByCreatedAtDesc(Payment.PaymentMethod paymentMethod);
+    List<Payment> findByPaymentMethodOrderByCreatedAtDesc(PaymentMethod paymentMethod);
 
     // Find payments by payment gateway
-    List<Payment> findByPaymentGatewayOrderByCreatedAtDesc(Payment.PaymentGateway paymentGateway);
+    List<Payment> findByPaymentGatewayOrderByCreatedAtDesc(PaymentGatewayProvider paymentGateway);
 
     // Find payments by payment method and status
-    List<Payment> findByPaymentMethodAndStatusOrderByCreatedAtDesc(Payment.PaymentMethod paymentMethod,
-                                                                   Payment.PaymentStatus status);
+    List<Payment> findByPaymentMethodAndStatusOrderByCreatedAtDesc(PaymentMethod paymentMethod,
+                                                                   PaymentStatus status);
 
     // Find payments by date range
     List<Payment> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
@@ -65,7 +69,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Page<Payment> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
     // Find payments by user and status
-    List<Payment> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, Payment.PaymentStatus status);
+    List<Payment> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, PaymentStatus status);
 
     // Find payments by user and date range
     List<Payment> findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(UUID userId, LocalDateTime startDate,
@@ -104,13 +108,13 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     List<Payment> findPaymentsWithRefunds();
 
     // Count payments by status
-    long countByStatus(Payment.PaymentStatus status);
+    long countByStatus(PaymentStatus status);
 
     // Count payments by payment method
-    long countByPaymentMethod(Payment.PaymentMethod paymentMethod);
+    long countByPaymentMethod(PaymentMethod paymentMethod);
 
     // Count payments by payment gateway
-    long countByPaymentGateway(Payment.PaymentGateway paymentGateway);
+    long countByPaymentGateway(PaymentGatewayProvider paymentGateway);
 
     // Count payments by user
     long countByUserId(UUID userId);
@@ -119,15 +123,15 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     // Count payments by status and date range
-    long countByStatusAndCreatedAtBetween(Payment.PaymentStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    long countByStatusAndCreatedAtBetween(PaymentStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
     // Get total amount by status
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = :status")
-    BigDecimal getTotalAmountByStatus(@Param("status") Payment.PaymentStatus status);
+    BigDecimal getTotalAmountByStatus(@Param("status") PaymentStatus status);
 
     // Get total amount by payment method
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.paymentMethod = :paymentMethod")
-    BigDecimal getTotalAmountByPaymentMethod(@Param("paymentMethod") Payment.PaymentMethod paymentMethod);
+    BigDecimal getTotalAmountByPaymentMethod(@Param("paymentMethod") PaymentMethod paymentMethod);
 
     // Get total amount by date range
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.createdAt BETWEEN :startDate AND :endDate")
@@ -248,9 +252,9 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
            "AND (:endDate IS NULL OR p.createdAt <= :endDate) " +
            "ORDER BY p.createdAt DESC")
     List<Payment> findPaymentsWithFilters(@Param("userId") UUID userId,
-                                         @Param("status") Payment.PaymentStatus status,
-                                         @Param("paymentMethod") Payment.PaymentMethod paymentMethod,
-                                         @Param("paymentGateway") Payment.PaymentGateway paymentGateway,
+                                         @Param("status") PaymentStatus status,
+                                         @Param("paymentMethod") PaymentMethod paymentMethod,
+                                         @Param("paymentGateway") PaymentGatewayProvider paymentGateway,
                                          @Param("minAmount") BigDecimal minAmount,
                                          @Param("maxAmount") BigDecimal maxAmount,
                                          @Param("startDate") LocalDateTime startDate,

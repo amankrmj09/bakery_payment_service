@@ -1,0 +1,13 @@
+package com.blubugtech.bakery_payment_service.enums;
+
+public enum ErrorCode {
+    PAYMENT_SERVICE_ERROR,
+    EXTERNAL_SERVICE_ERROR,
+    PAYMENT_NOT_FOUND,
+    ORDER_NOT_FOUND,
+    INVALID_PAYMENT_REQUEST,
+    DUPLICATE_PAYMENT,
+    PAYMENT_TIMEOUT,
+    PAYMENT_GATEWAY_ERROR,
+    REFUND_FAILED
+}

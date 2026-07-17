@@ -1,5 +1,7 @@
 package com.blubugtech.bakery_payment_service.entity;
 
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -13,6 +15,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
+import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 
 @Setter
 @Getter
@@ -51,7 +56,7 @@ public class Payment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_gateway", nullable = false)
-    private PaymentGateway paymentGateway = PaymentGateway.MOCK;
+    private PaymentGatewayProvider paymentGateway = PaymentGatewayProvider.MOCK;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -197,7 +202,7 @@ public class Payment {
 
     public BigDecimal getTotalRefundedAmount() {
         return refunds.stream()
-                .filter(refund -> refund.getStatus() == Refund.RefundStatus.COMPLETED)
+                .filter(refund -> refund.getStatus() == com.blubugtech.bakery_payment_service.enums.RefundStatus.COMPLETED)
                 .map(Refund::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -236,29 +241,4 @@ public class Payment {
         return "PAY-" + timestamp + "-" + randomPart;
     }
 
-    // Enums
-    public enum PaymentMethod {
-        CASH,
-        CARD,
-        DIGITAL_WALLET,
-        BANK_TRANSFER,
-        CRYPTO
-    }
-
-    public enum PaymentGateway {
-        STRIPE,
-        PAYPAL,
-        SQUARE,
-        MANUAL,
-        MOCK
-    }
-
-    public enum PaymentStatus {
-        PENDING,
-        PROCESSING,
-        COMPLETED,
-        FAILED,
-        CANCELLED,
-        REFUNDED
-    }
 }

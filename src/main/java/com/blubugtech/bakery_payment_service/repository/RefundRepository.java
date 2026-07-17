@@ -1,5 +1,7 @@
 package com.blubugtech.bakery_payment_service.repository;
 
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
+
 import com.blubugtech.bakery_payment_service.entity.Refund;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,10 +32,10 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     List<Refund> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
 
     // Find refunds by status
-    List<Refund> findByStatusOrderByCreatedAtDesc(Refund.RefundStatus status);
+    List<Refund> findByStatusOrderByCreatedAtDesc(RefundStatus status);
 
     // Find refunds by status with pagination
-    Page<Refund> findByStatus(Refund.RefundStatus status, Pageable pageable);
+    Page<Refund> findByStatus(RefundStatus status, Pageable pageable);
 
     // Find refunds by requested by user
     List<Refund> findByRequestedByOrderByCreatedAtDesc(UUID requestedBy);
@@ -71,10 +73,10 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     List<Refund> findCompletedRefunds();
 
     // Find refunds by payment and status
-    List<Refund> findByPaymentIdAndStatusOrderByCreatedAtDesc(UUID paymentId, Refund.RefundStatus status);
+    List<Refund> findByPaymentIdAndStatusOrderByCreatedAtDesc(UUID paymentId, RefundStatus status);
 
     // Count refunds by status
-    long countByStatus(Refund.RefundStatus status);
+    long countByStatus(RefundStatus status);
 
     // Count refunds by payment
     long countByPaymentId(UUID paymentId);
@@ -86,11 +88,11 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     // Count refunds by status and date range
-    long countByStatusAndCreatedAtBetween(Refund.RefundStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    long countByStatusAndCreatedAtBetween(RefundStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
     // Get total refund amount by status
     @Query("SELECT COALESCE(SUM(r.amount), 0) FROM Refund r WHERE r.status = :status")
-    BigDecimal getTotalRefundAmountByStatus(@Param("status") Refund.RefundStatus status);
+    BigDecimal getTotalRefundAmountByStatus(@Param("status") RefundStatus status);
 
     // Get total refund amount by date range
     @Query("SELECT COALESCE(SUM(r.amount), 0) FROM Refund r WHERE r.createdAt BETWEEN :startDate AND :endDate")
@@ -175,7 +177,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
            "AND (:startDate IS NULL OR r.createdAt >= :startDate) " +
            "AND (:endDate IS NULL OR r.createdAt <= :endDate) " +
            "ORDER BY r.createdAt DESC")
-    List<Refund> findRefundsWithFilters(@Param("status") Refund.RefundStatus status,
+    List<Refund> findRefundsWithFilters(@Param("status") RefundStatus status,
                                        @Param("requestedBy") UUID requestedBy,
                                        @Param("approvedBy") UUID approvedBy,
                                        @Param("minAmount") BigDecimal minAmount,

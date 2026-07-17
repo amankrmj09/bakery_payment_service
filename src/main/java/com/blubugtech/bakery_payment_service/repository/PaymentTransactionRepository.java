@@ -1,5 +1,8 @@
 package com.blubugtech.bakery_payment_service.repository;
 
+import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
+import com.blubugtech.bakery_payment_service.enums.TransactionType;
+
 import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,21 +22,21 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransaction> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
 
     // Find transactions by transaction type
-    List<PaymentTransaction> findByTransactionTypeOrderByCreatedAtDesc(PaymentTransaction.TransactionType transactionType);
+    List<PaymentTransaction> findByTransactionTypeOrderByCreatedAtDesc(TransactionType transactionType);
 
     // Find transactions by status
-    List<PaymentTransaction> findByStatusOrderByCreatedAtDesc(PaymentTransaction.TransactionStatus status);
+    List<PaymentTransaction> findByStatusOrderByCreatedAtDesc(TransactionStatus status);
 
     // Find transaction by gateway transaction ID
     Optional<PaymentTransaction> findByGatewayTransactionId(String gatewayTransactionId);
 
     // Find transactions by payment and transaction type
     List<PaymentTransaction> findByPaymentIdAndTransactionTypeOrderByCreatedAtDesc(UUID paymentId,
-                                                                                   PaymentTransaction.TransactionType transactionType);
+                                                                                   TransactionType transactionType);
 
     // Find transactions by payment and status
     List<PaymentTransaction> findByPaymentIdAndStatusOrderByCreatedAtDesc(UUID paymentId,
-                                                                          PaymentTransaction.TransactionStatus status);
+                                                                          TransactionStatus status);
 
     // Find transactions by date range
     List<PaymentTransaction> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
@@ -51,10 +54,10 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransaction> findPendingTransactionsOlderThan(@Param("cutoffTime") LocalDateTime cutoffTime);
 
     // Count transactions by type
-    long countByTransactionType(PaymentTransaction.TransactionType transactionType);
+    long countByTransactionType(TransactionType transactionType);
 
     // Count transactions by status
-    long countByStatus(PaymentTransaction.TransactionStatus status);
+    long countByStatus(TransactionStatus status);
 
     // Count transactions by payment
     long countByPaymentId(UUID paymentId);
@@ -63,11 +66,11 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     // Count transactions by status and createdAt between two dates
-    long countByStatusAndCreatedAtBetween(PaymentTransaction.TransactionStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    long countByStatusAndCreatedAtBetween(TransactionStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
     // Get total amount by transaction type
     @Query("SELECT COALESCE(SUM(pt.amount), 0) FROM PaymentTransaction pt WHERE pt.transactionType = :transactionType")
-    BigDecimal getTotalAmountByTransactionType(@Param("transactionType") PaymentTransaction.TransactionType transactionType);
+    BigDecimal getTotalAmountByTransactionType(@Param("transactionType") TransactionType transactionType);
 
     // Get transaction statistics by type
     @Query("SELECT pt.transactionType as transactionType, " +
@@ -97,7 +100,7 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             "WHERE pt.payment.id = :paymentId AND pt.transactionType = :transactionType " +
             "ORDER BY pt.createdAt DESC LIMIT 1")
     Optional<PaymentTransaction> findLatestByPaymentAndType(@Param("paymentId") UUID paymentId,
-                                                            @Param("transactionType") PaymentTransaction.TransactionType transactionType);
+                                                            @Param("transactionType") TransactionType transactionType);
 
     // Check if payment has successful transaction of specific type
     @Query("SELECT COUNT(pt) > 0 FROM PaymentTransaction pt " +
@@ -105,5 +108,5 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             "AND pt.transactionType = :transactionType " +
             "AND pt.status = 'COMPLETED'")
     boolean hasSuccessfulTransaction(@Param("paymentId") UUID paymentId,
-                                     @Param("transactionType") PaymentTransaction.TransactionType transactionType);
+                                     @Param("transactionType") TransactionType transactionType);
 }

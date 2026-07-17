@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.blubugtech.bakery_payment_service.enums.TransactionType;
+import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 
 @Setter
 @Getter
@@ -96,20 +98,4 @@ public class PaymentTransaction {
         return status == TransactionStatus.FAILED;
     }
 
-    // Enums
-    public enum TransactionType {
-        AUTHORIZATION,
-        CAPTURE,
-        SALE,  // Combined auth + capture
-        VOID,
-        REFUND
-    }
-
-    public enum TransactionStatus {
-        PENDING,
-        PROCESSING,
-        COMPLETED,
-        FAILED,
-        CANCELLED
-    }
 }

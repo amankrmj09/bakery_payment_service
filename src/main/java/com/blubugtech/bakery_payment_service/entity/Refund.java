@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 
 @Setter
 @Getter
@@ -128,11 +129,4 @@ public class Refund {
         return "REF-" + timestamp + "-" + randomPart;
     }
 
-    // Enum
-    public enum RefundStatus {
-        PENDING,
-        PROCESSING,
-        COMPLETED,
-        FAILED
-    }
 }
