@@ -4,70 +4,28 @@ This document provides a comprehensive reference for all the REST API endpoints 
 
 ---
 
-## 1. Health & Info
-**Base Path:** `/api`
+## 1. System & Monitoring (Actuator)
+**Base Path:** `/actuator`
 
-### 1.1 Main Service Health Check
+Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
+
+### 1.1 Health Check
 - **Method:** `GET`
-- **Path:** `/api/health`
+- **Path:** `/actuator/health`
 - **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "status": "UP",
-    "service": "bakery-payment-service",
-    "timestamp": "2023-10-27T10:00:00",
-    "version": "1.0.0",
-    "database": "UP",
-    "databaseUrl": "jdbc:postgresql://localhost:5432/bakery"
-  }
-  ```
+- **Response Body:** `200 OK` (Standard Actuator Health JSON)
 
 ### 1.2 Service Info
 - **Method:** `GET`
-- **Path:** `/api/info`
+- **Path:** `/actuator/info`
 - **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "serviceName": "Bakery Payment Service",
-    "description": "Payment processing and gateway integration service",
-    "version": "1.0.0",
-    "features": {
-      "payments": "Multi-gateway payment processing",
-      "refunds": "Full and partial refund management",
-      "transactions": "Complete transaction history tracking",
-      "gateways": "Support for Stripe, PayPal, Square",
-      "analytics": "Payment and refund analytics"
-    },
-    "endpoints": {
-      "payments": "/api/payments",
-      "refunds": "/api/refunds",
-      "transactions": "/api/transactions"
-    }
-  }
-  ```
+- **Response Body:** `200 OK` (Standard Actuator Info JSON)
 
-### 1.3 Service Metrics
+### 1.3 Prometheus Metrics
 - **Method:** `GET`
-- **Path:** `/api/metrics`
+- **Path:** `/actuator/prometheus`
 - **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "uptime": "1 days, 2 hours, 30 minutes, 15 seconds",
-    "timestamp": "2023-10-27T10:00:00",
-    "memory": {
-      "maxMemory": "1024 MB",
-      "totalMemory": "512 MB",
-      "freeMemory": "256 MB",
-      "usedMemory": "256 MB"
-    }
-  }
-  ```
+- **Response Body:** `200 OK` (Prometheus Text Format)
 
 ---
 
@@ -201,19 +159,6 @@ This document provides a comprehensive reference for all the REST API endpoints 
   }
   ```
 
-### 2.12 Payment Service Health
-- **Method:** `GET`
-- **Path:** `/api/payments/health`
-- **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "status": "UP",
-    "service": "payment-service-payments",
-    "timestamp": "2023-10-27T10:00:00"
-  }
-  ```
 
 ---
 
@@ -360,19 +305,6 @@ This document provides a comprehensive reference for all the REST API endpoints 
   }
   ```
 
-### 3.16 Refund Service Health
-- **Method:** `GET`
-- **Path:** `/api/refunds/health`
-- **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "status": "UP",
-    "service": "payment-service-refunds",
-    "timestamp": "2023-10-27T10:00:00"
-  }
-  ```
 
 ---
 
@@ -441,19 +373,6 @@ This document provides a comprehensive reference for all the REST API endpoints 
   }
   ```
 
-### 4.8 Transaction Service Health
-- **Method:** `GET`
-- **Path:** `/api/transactions/health`
-- **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "status": "UP",
-    "service": "payment-service-transactions",
-    "timestamp": "2023-10-27T10:00:00"
-  }
-  ```
 
 ---
 

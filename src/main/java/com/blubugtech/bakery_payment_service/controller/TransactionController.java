@@ -169,9 +169,4 @@ public class TransactionController {
         return ResponseEntity.ok(statistics);
     }
 
-    // Health check
-    @GetMapping("/health")
-    public ResponseEntity<com.blubugtech.common.contract.feign.HealthResponse> health() {
-        return ResponseEntity.ok(new com.blubugtech.common.contract.feign.HealthResponse("UP", "payment-service-transactions"));
-    }
 }
