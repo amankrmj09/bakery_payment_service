@@ -2,8 +2,8 @@ package com.blubugtech.bakery_payment_service.enums;
 
 public enum PaymentMethod {
     CASH(PaymentGatewayProvider.MANUAL),
-    CARD(PaymentGatewayProvider.STRIPE),
-    DIGITAL_WALLET(PaymentGatewayProvider.PAYPAL),
+    CARD(PaymentGatewayProvider.MOCK),
+    DIGITAL_WALLET(PaymentGatewayProvider.MOCK),
     BANK_TRANSFER(PaymentGatewayProvider.MANUAL),
     CRYPTO(PaymentGatewayProvider.MOCK);
 
