@@ -30,9 +30,13 @@ public class PaymentOtpController {
     }
 
     @PostMapping("/{paymentId}/send-otp")
-    public ResponseEntity<Map<String, String>> sendOtp(@PathVariable UUID paymentId) {
+    public ResponseEntity<Map<String, String>> sendOtp(
+            @PathVariable UUID paymentId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String email) {
+        
         logger.info("Sending OTP for payment ID: {}", paymentId);
-        String otp = otpService.generateAndSendOtp(paymentId.toString());
+        String otp = otpService.generateAndSendOtp(paymentId.toString(), userId, email);
         // Do not return OTP in production, only for learning purposes
         return ResponseEntity.ok(Map.of("message", "OTP sent successfully", "mock_otp", otp));
     }

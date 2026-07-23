@@ -527,28 +527,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentServiceException("Payment not found"));
 
-        String otp = otpService.generateAndSendOtp(paymentId.toString());
-
-        try {
-            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
-                .userId(payment.getUserId())
-                .email("user@example.com") // In a real scenario, fetch user email from auth service or store it in Payment entity
-                .action("OTP_REQUESTED")
-                .otpCode(otp)
-                .expiryMinutes(5)
-                .timestamp(LocalDateTime.now())
-                .build();
-
-            com.blubugtech.common.event.UserEvent event = com.blubugtech.common.event.UserEvent.builder()
-                .eventType("USER_OTP_REQUESTED")
-                .payload(payload)
-                .build();
-            
-            kafkaTemplate.send("user-events", payment.getUserId().toString(), event);
-            logger.info("Published UserEvent to send OTP for payment: {}", paymentId);
-        } catch (Exception e) {
-            logger.error("Failed to publish UserEvent for OTP: {}", e.getMessage());
-        }
+        otpService.generateAndSendOtp(paymentId.toString(), payment.getUserId().toString(), null);
     }
 
     public PaymentResponse verifyOtp(UUID paymentId, String otp) {
