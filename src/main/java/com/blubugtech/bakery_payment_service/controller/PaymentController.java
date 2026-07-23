@@ -260,6 +260,48 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
+    // Send OTP
+    @PostMapping("/{paymentId}/send-otp")
+    public ResponseEntity<Void> sendOtp(
+            @PathVariable UUID paymentId,
+            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+
+        logger.info("Send OTP request received: {}", paymentId);
+
+        if (userId != null && !"ADMIN".equals(userRole)) {
+            PaymentResponse existingPayment = paymentService.getPaymentById(paymentId);
+            if (!existingPayment.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+
+        paymentService.sendOtp(paymentId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Verify OTP
+    @PostMapping("/{paymentId}/verify-otp")
+    public ResponseEntity<PaymentResponse> verifyOtp(
+            @PathVariable UUID paymentId,
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+
+        logger.info("Verify OTP request received: {}", paymentId);
+
+        if (userId != null && !"ADMIN".equals(userRole)) {
+            PaymentResponse existingPayment = paymentService.getPaymentById(paymentId);
+            if (!existingPayment.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+
+        String otp = request.get("otp");
+        PaymentResponse payment = paymentService.verifyOtp(paymentId, otp);
+        return ResponseEntity.ok(payment);
+    }
+
     // Get payment statistics
     @GetMapping("/statistics")
     @PreAuthorize("hasRole('ADMIN')")

@@ -25,4 +25,6 @@ public interface PaymentService {
     PaymentResponse cancelPayment(UUID paymentId, String reason);
     PaymentResponse retryPayment(UUID paymentId);
     Map<String, Object> getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate);
+    void sendOtp(UUID paymentId);
+    PaymentResponse verifyOtp(UUID paymentId, String otp);
 }

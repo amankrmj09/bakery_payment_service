@@ -65,6 +65,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     final private PaymentEventPublisher paymentEventPublisher;
 
+    final private com.blubugtech.bakery_payment_service.service.OtpService otpService;
+
+    final private org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
+
     @Value("${payment.limits.min-amount:0.50}")
     private BigDecimal minPaymentAmount;
 
@@ -74,7 +78,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
@@ -83,6 +87,8 @@ public class PaymentServiceImpl implements PaymentService {
         this.internalStatsClient = internalStatsClient;
         this.paymentEventPublisher = paymentEventPublisher;
         this.paymentGateways = paymentGateways;
+        this.otpService = otpService;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     // Create payment
@@ -126,13 +132,13 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setExpiresAt(LocalDateTime.now().plusMinutes(15));
             }
 
+            // Payment is kept in PENDING until OTP is verified
+            payment.setStatus(PaymentStatus.PENDING);
+
             // Save payment
             Payment savedPayment = paymentRepository.save(payment);
 
-            // Process payment asynchronously
-            processPaymentAsync(savedPayment);
-
-            logger.info("Payment created successfully: {}", savedPayment.getPaymentReference());
+            logger.info("Payment created successfully (PENDING for OTP): {}", savedPayment.getPaymentReference());
             return PaymentResponse.from(savedPayment);
 
         } catch (Exception e) {
@@ -517,5 +523,45 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new PaymentServiceException("No gateway available for provider: " + provider));
     }
 
+    public void sendOtp(UUID paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentServiceException("Payment not found"));
 
+        String otp = otpService.generateAndSendOtp(paymentId.toString());
+
+        try {
+            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                .userId(payment.getUserId())
+                .email("user@example.com") // In a real scenario, fetch user email from auth service or store it in Payment entity
+                .action("OTP_REQUESTED")
+                .otpCode(otp)
+                .expiryMinutes(5)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+            com.blubugtech.common.event.UserEvent event = com.blubugtech.common.event.UserEvent.builder()
+                .eventType("USER_OTP_REQUESTED")
+                .payload(payload)
+                .build();
+            
+            kafkaTemplate.send("user-events", payment.getUserId().toString(), event);
+            logger.info("Published UserEvent to send OTP for payment: {}", paymentId);
+        } catch (Exception e) {
+            logger.error("Failed to publish UserEvent for OTP: {}", e.getMessage());
+        }
+    }
+
+    public PaymentResponse verifyOtp(UUID paymentId, String otp) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentServiceException("Payment not found"));
+
+        boolean isValid = otpService.verifyOtp(paymentId.toString(), otp);
+        if (!isValid) {
+            throw new PaymentServiceException("Invalid or expired OTP");
+        }
+
+        // OTP valid, process payment
+        processPaymentAsync(payment);
+        return PaymentResponse.from(payment);
+    }
 }
