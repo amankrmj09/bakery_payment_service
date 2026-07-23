@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/api/payments/mock")
 @Tag(name = "Payment OTP", description = "Mock OTP Payment APIs")
 public class PaymentOtpController {
 
