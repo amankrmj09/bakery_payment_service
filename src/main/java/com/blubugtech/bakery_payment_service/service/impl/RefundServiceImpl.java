@@ -18,6 +18,10 @@ import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayR
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import com.blubugtech.bakery_payment_service.exception.gateway.PaymentGatewayException;
+import com.blubugtech.bakery_payment_service.integration.kafka.producer.PaymentEventPublisher;
+import com.blubugtech.bakery_payment_service.client.UserClient;
+import com.blubugtech.common.event.PaymentEvent;
+import com.blubugtech.common.contract.messaging.PaymentPayload;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +54,19 @@ public class RefundServiceImpl implements RefundService {
     final private List<PaymentGateway> paymentGateways;
 
     final private ObjectMapper objectMapper;
+    
+    final private PaymentEventPublisher paymentEventPublisher;
+    
+    final private UserClient userClient;
 
-    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper) {
+    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, PaymentEventPublisher paymentEventPublisher, UserClient userClient) {
         this.refundRepository = refundRepository;
         this.paymentGateways = paymentGateways;
         this.paymentRepository = paymentRepository;
         
         this.objectMapper = objectMapper;
+        this.paymentEventPublisher = paymentEventPublisher;
+        this.userClient = userClient;
     }
 
     // Create refund
@@ -299,6 +309,7 @@ public class RefundServiceImpl implements RefundService {
             if (gatewayResponse.isSuccess()) {
                 refund.setStatus(RefundStatus.COMPLETED);
                 refund.setCompletedAt(LocalDateTime.now());
+                publishRefundEvent(refund);
             } else if (gatewayResponse.isPending()) {
                 refund.setStatus(RefundStatus.PROCESSING);
             } else {
@@ -367,6 +378,37 @@ public class RefundServiceImpl implements RefundService {
         } catch (Exception e) {
             logger.warn("Failed to convert metadata to JSON: {}", e.getMessage());
             return "{}";
+        }
+    }
+    
+    private void publishRefundEvent(Refund refund) {
+        try {
+            Payment payment = refund.getPayment();
+            UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
+            
+            PaymentPayload payload = PaymentPayload.builder()
+                .paymentId(payment.getId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .customerEmail(userDto != null ? userDto.getEmail() : null)
+                .status("REFUNDED")
+                .amount(payment.getAmount())
+                .refundAmount(refund.getAmount())
+                .refundReason(refund.getReason())
+                .timestamp(LocalDateTime.now())
+                .build();
+                
+            PaymentEvent event = PaymentEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("PAYMENT_REFUNDED")
+                .timestamp(java.time.Instant.now())
+                .payload(payload)
+                .build();
+                
+            paymentEventPublisher.publishPaymentStatusUpdated(event);
+            logger.info("Published PAYMENT_REFUNDED event for refund: {}", refund.getRefundReference());
+        } catch (Exception e) {
+            logger.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage());
         }
     }
 
