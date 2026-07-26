@@ -31,7 +31,16 @@ public class OrderEventListener {
         logger.info("Received OrderEvent with type: {} for Order ID: {}", event.getEventType(), event.getPayload().getOrderId());
         
         if ("ORDER_STATUS_UPDATED".equals(event.getEventType()) && "CANCELLED".equals(event.getPayload().getStatus())) {
-            logger.info("Order {} was cancelled, checking for completed payments to refund...", event.getPayload().getOrderId());
+            
+            boolean cancelledByAdmin = event.getMetadata() != null && 
+                    Boolean.TRUE.equals(event.getMetadata().get("cancelledByAdmin"));
+            
+            if (!cancelledByAdmin) {
+                logger.info("Order {} was cancelled, but not by an admin. Skipping automatic refund.", event.getPayload().getOrderId());
+                return;
+            }
+
+            logger.info("Order {} was cancelled by an admin, checking for completed payments to refund...", event.getPayload().getOrderId());
             
             // Query for completed payments associated with this order
             java.util.Optional<Payment> optionalPayment = paymentRepository.findByOrderId(event.getPayload().getOrderId());
