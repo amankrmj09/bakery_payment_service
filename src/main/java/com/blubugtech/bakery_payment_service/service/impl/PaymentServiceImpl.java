@@ -62,6 +62,7 @@ public class PaymentServiceImpl implements PaymentService {
     final private InternalStatsClient internalStatsClient;
 
     final private ObjectMapper objectMapper;
+    final private com.blubugtech.bakery_payment_service.client.UserClient userClient;
 
     final private PaymentEventPublisher paymentEventPublisher;
 
@@ -78,7 +79,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
@@ -89,6 +90,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.paymentGateways = paymentGateways;
         this.otpService = otpService;
         this.kafkaTemplate = kafkaTemplate;
+        this.userClient = userClient;
     }
 
     // Create payment
@@ -430,7 +432,19 @@ public class PaymentServiceImpl implements PaymentService {
     @Async
     protected void notifyOrderServiceAsync(Payment payment) {
         try {
-            com.blubugtech.common.event.PaymentEvent event = com.blubugtech.common.event.PaymentEvent.builder().payload(com.blubugtech.common.contract.messaging.PaymentPayload.builder().paymentId(payment.getId()).orderId(payment.getOrderId()).status(payment.getStatus().name()).amount(payment.getAmount()).timestamp(LocalDateTime.now()).build()).build();
+            com.blubugtech.bakery_payment_service.client.UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
+            com.blubugtech.common.event.PaymentEvent event = com.blubugtech.common.event.PaymentEvent.builder().payload(
+                com.blubugtech.common.contract.messaging.PaymentPayload.builder()
+                    .paymentId(payment.getId())
+                    .orderId(payment.getOrderId())
+                    .userId(payment.getUserId())
+                    .customerEmail(userDto != null ? userDto.getEmail() : null)
+                    .customerPhone(userDto != null ? userDto.getPhone() : null)
+                    .status(payment.getStatus().name())
+                    .amount(payment.getAmount())
+                    .timestamp(LocalDateTime.now())
+                    .build()
+            ).build();
             paymentEventPublisher.publishPaymentStatusUpdated(event);
             logger.debug("Payment status event published for payment: {}", payment.getPaymentReference());
         } catch (Exception e) {

@@ -391,6 +391,7 @@ public class RefundServiceImpl implements RefundService {
                 .orderId(payment.getOrderId())
                 .userId(payment.getUserId())
                 .customerEmail(userDto != null ? userDto.getEmail() : null)
+                .customerPhone(userDto != null ? userDto.getPhone() : null)
                 .status("REFUNDED")
                 .amount(payment.getAmount())
                 .refundAmount(refund.getAmount())
