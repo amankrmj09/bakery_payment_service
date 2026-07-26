@@ -57,4 +57,18 @@ public class PaymentOtpController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid or expired OTP"));
         }
     }
+
+    @PostMapping("/{paymentId}/resend-otp")
+    public ResponseEntity<Map<String, String>> resendOtp(
+            @PathVariable UUID paymentId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String email) {
+        
+        logger.info("Resending OTP for payment ID: {}", paymentId);
+        String otp = otpService.resendOtp(paymentId.toString(), userId, email);
+        if (otp == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Payment session expired. Please restart checkout."));
+        }
+        return ResponseEntity.ok(Map.of("message", "OTP resent successfully", "mock_otp", otp));
+    }
 }

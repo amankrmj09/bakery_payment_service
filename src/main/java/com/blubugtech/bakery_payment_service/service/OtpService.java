@@ -65,4 +65,12 @@ public class OtpService {
         }
         return false;
     }
+
+    public String resendOtp(String paymentId, String userIdStr, String email) {
+        String existingOtp = redisTemplate.opsForValue().get(OTP_PREFIX + paymentId);
+        if (existingOtp == null) {
+            return null;
+        }
+        return generateAndSendOtp(paymentId, userIdStr, email);
+    }
 }
