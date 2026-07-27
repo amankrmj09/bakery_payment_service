@@ -17,9 +17,7 @@ import com.blubugtech.bakery_payment_service.dto.refund.*;
 import com.blubugtech.bakery_payment_service.dto.transaction.*;
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
-import com.blubugtech.bakery_payment_service.exception.payment.InvalidPaymentAmountException;
-import com.blubugtech.bakery_payment_service.exception.payment.InvalidPaymentStatusException;
-import com.blubugtech.bakery_payment_service.exception.payment.PaymentServiceException;
+import com.blubugtech.bakery_payment_service.exception.payment.*;
 import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
@@ -155,7 +153,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.debug("Fetching payment by ID: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found with ID: " + paymentId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
         return PaymentResponse.from(payment);
     }
@@ -166,7 +164,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.debug("Fetching payment by reference: {}", paymentReference);
 
         Payment payment = paymentRepository.findByPaymentReference(paymentReference)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found with reference: " + paymentReference));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with reference: " + paymentReference));
 
         return PaymentResponse.from(payment);
     }
@@ -177,7 +175,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.debug("Fetching payment by order ID: {}", orderId);
 
         Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found for order: " + orderId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for order: " + orderId));
 
         return PaymentResponse.from(payment);
     }
@@ -216,7 +214,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.info("Updating payment status: {} to {}", paymentId, request.getStatus());
 
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found with ID: " + paymentId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
         // Validate status transition
         validateStatusTransition(payment.getStatus(), request.getStatus());
@@ -254,7 +252,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.info("Cancelling payment: {} with reason: {}", paymentId, reason);
 
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found with ID: " + paymentId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
         if (payment.getStatus() == PaymentStatus.COMPLETED) {
             throw new PaymentServiceException("Cannot cancel completed payment. Use refund instead.");
@@ -293,7 +291,7 @@ public class PaymentServiceImpl implements PaymentService {
         logger.info("Retrying failed payment: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found with ID: " + paymentId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
         if (!payment.canBeRetried()) {
             throw new PaymentServiceException("Payment cannot be retried");
@@ -539,14 +537,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     public void sendOtp(UUID paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
         otpService.generateAndSendOtp(paymentId.toString(), payment.getUserId().toString(), null);
     }
 
     public PaymentResponse verifyOtp(UUID paymentId, String otp) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentServiceException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
         boolean isValid = otpService.verifyOtp(paymentId.toString(), otp);
         if (!isValid) {
