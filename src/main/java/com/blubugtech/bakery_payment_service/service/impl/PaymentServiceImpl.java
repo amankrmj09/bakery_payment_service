@@ -65,6 +65,8 @@ public class PaymentServiceImpl implements PaymentService {
     final private PaymentEventPublisher paymentEventPublisher;
 
     final private com.blubugtech.bakery_payment_service.service.OtpService otpService;
+    
+    final private com.blubugtech.bakery_payment_service.client.OrderClient orderClient;
 
     final private org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -77,7 +79,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient, com.blubugtech.bakery_payment_service.client.OrderClient orderClient) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
@@ -89,6 +91,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.otpService = otpService;
         this.kafkaTemplate = kafkaTemplate;
         this.userClient = userClient;
+        this.orderClient = orderClient;
     }
 
     // Create payment
@@ -457,8 +460,34 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void validatePaymentRequest(PaymentRequest request) {
-        // Order validation skipped (event-driven)
-        // Validation skipped (trust the event)
+        // Validate order and amount against Order Service
+        try {
+            com.blubugtech.bakery_payment_service.client.OrderClient.OrderDto order = orderClient.getOrderById(request.getOrderId());
+            
+            if (order == null) {
+                throw new PaymentServiceException("Order not found: " + request.getOrderId());
+            }
+            
+            if ("COMPLETED".equals(order.getPaymentStatus()) || "PAID".equals(order.getPaymentStatus())) {
+                throw new PaymentServiceException("Order is already paid");
+            }
+            
+            if ("CANCELLED".equals(order.getStatus())) {
+                throw new PaymentServiceException("Cannot pay for a cancelled order");
+            }
+            
+            if (request.getAmount().compareTo(order.getTotalAmount()) != 0) {
+                throw new InvalidPaymentAmountException("Payment amount must match the order total: " + order.getTotalAmount());
+            }
+        } catch (feign.FeignException.NotFound e) {
+            throw new PaymentServiceException("Order not found: " + request.getOrderId());
+        } catch (Exception e) {
+            if (e instanceof PaymentServiceException || e instanceof InvalidPaymentAmountException) {
+                throw e;
+            }
+            logger.error("Failed to validate order {}: {}", request.getOrderId(), e.getMessage());
+            throw new PaymentServiceException("Failed to validate order details");
+        }
 
         if (request.getAmount().compareTo(minPaymentAmount) < 0) {
             throw new InvalidPaymentAmountException("Payment amount is below minimum: " + minPaymentAmount);
