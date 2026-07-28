@@ -1,7 +1,7 @@
 package com.blubugtech.bakery_payment_service.client.statistics;
 
-import com.blubugtech.common.contract.messaging.RevenuePayload;
-import com.blubugtech.common.exception.common.FeignClientException;
+import org.blubakery.bakery_common_libs.contract.messaging.RevenuePayload;
+import org.blubakery.bakery_common_libs.exception.common.FeignClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;

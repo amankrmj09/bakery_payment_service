@@ -1,29 +1,26 @@
 package com.blubugtech.bakery_payment_service.integration.kafka.consumer;
 
-import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
-
-import com.blubugtech.common.event.PaymentRequestedEvent;
-import com.blubugtech.bakery_payment_service.dto.payment.*;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentRequest;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
+import lombok.RequiredArgsConstructor;
+import org.blubakery.bakery_common_libs.constants.KafkaTopics;
+import org.blubakery.bakery_common_libs.event.PaymentRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentRequestedEventConsumer {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentRequestedEventConsumer.class);
     private final PaymentService paymentService;
 
-    public PaymentRequestedEventConsumer(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
-
-    @KafkaListener(topics = "${kafka.topic.payment-requests}", groupId = "payment-service-group")
+    @KafkaListener(topics = KafkaTopics.PAYMENT_REQUESTS_TOPIC, groupId = "payment-service-group")
     public void consume(PaymentRequestedEvent event) {
         logger.info("Received PaymentRequestedEvent for Order ID: {} with amount: {}", event.getPayload().getOrderId(), event.getPayload().getAmount());
-        
+
         try {
             PaymentRequest request = new PaymentRequest();
             request.setOrderId(event.getPayload().getOrderId());
@@ -38,7 +35,7 @@ public class PaymentRequestedEventConsumer {
             request.setDigitalWalletProvider(event.getPayload().getDigitalWalletProvider());
             request.setBankName(event.getPayload().getBankName());
             request.setNotes(event.getPayload().getNotes());
-            
+
             paymentService.createPayment(request);
             logger.info("Successfully initiated payment for order: {}", event.getPayload().getOrderId());
         } catch (Exception e) {
