@@ -186,7 +186,7 @@ public class Payment {
         this.amount = amount;
         this.description = description;
         this.paymentReference = generatePaymentReference();
-        this.netAmount = amount; // Initially same as amount, updated after fees
+        this.netAmount = amount.setScale(2, java.math.RoundingMode.HALF_UP); // Initially same as amount, updated after fees
     }
 
     // Utility Methods
@@ -204,14 +204,15 @@ public class Payment {
         return refunds.stream()
                 .filter(refund -> refund.getStatus() == com.blubugtech.bakery_payment_service.enums.RefundStatus.COMPLETED)
                 .map(Refund::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     public BigDecimal getRefundableAmount() {
         if (status != PaymentStatus.COMPLETED) {
-            return BigDecimal.ZERO;
+            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
         }
-        return amount.subtract(getTotalRefundedAmount());
+        return amount.subtract(getTotalRefundedAmount()).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     public boolean canBeRefunded() {
@@ -232,7 +233,7 @@ public class Payment {
     }
 
     public void calculateNetAmount() {
-        this.netAmount = amount.subtract(gatewayFee != null ? gatewayFee : BigDecimal.ZERO);
+        this.netAmount = amount.subtract(gatewayFee != null ? gatewayFee : BigDecimal.ZERO).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private String generatePaymentReference() {
