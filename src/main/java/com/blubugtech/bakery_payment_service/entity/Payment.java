@@ -70,7 +70,7 @@ public class Payment {
 
     @Column(name = "currency_code", length = 3, nullable = false)
     @Size(min = 3, max = 3, message = "Currency code must be 3 characters")
-    private String currencyCode = "USD";
+    private String currencyCode = "INR";
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
