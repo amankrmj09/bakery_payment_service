@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@FeignClient(name = "bakery-order-service")
+@FeignClient(name = "bakery-order-service", fallbackFactory = OrderClientFallbackFactory.class)
 public interface OrderClient {
 
     @GetMapping("/api/orders/{id}")

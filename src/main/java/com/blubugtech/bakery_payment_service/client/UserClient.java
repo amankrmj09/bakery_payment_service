@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "bakery-auth-service")
+@FeignClient(name = "bakery-auth-service", fallbackFactory = UserClientFallbackFactory.class)
 public interface UserClient {
 
     @GetMapping("/api/users/{id}")
