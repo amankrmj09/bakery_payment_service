@@ -1,25 +1,23 @@
 package com.blubugtech.bakery_payment_service.integration.kafka.consumer;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.dto.payment.PaymentRequest;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.blubakery.bakery_common_libs.constants.KafkaTopics;
 import org.blubakery.bakery_common_libs.event.PaymentRequestedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentRequestedEventConsumer {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaymentRequestedEventConsumer.class);
     private final PaymentService paymentService;
 
     @KafkaListener(topics = KafkaTopics.PAYMENT_REQUESTS_TOPIC, groupId = "payment-service-group")
     public void consume(PaymentRequestedEvent event) {
-        logger.info("Received PaymentRequestedEvent for Order ID: {} with amount: {}", event.getPayload().getOrderId(), event.getPayload().getAmount());
+        log.info("Received PaymentRequestedEvent for Order ID: {} with amount: {}", event.getPayload().getOrderId(), event.getPayload().getAmount());
 
         try {
             PaymentRequest request = new PaymentRequest();
@@ -37,9 +35,9 @@ public class PaymentRequestedEventConsumer {
             request.setNotes(event.getPayload().getNotes());
 
             paymentService.createPayment(request);
-            logger.info("Successfully initiated payment for order: {}", event.getPayload().getOrderId());
+            log.info("Successfully initiated payment for order: {}", event.getPayload().getOrderId());
         } catch (Exception e) {
-            logger.error("Failed to process payment request event for order {}: {}", event.getPayload().getOrderId(), e.getMessage());
+            log.error("Failed to process payment request event for order {}: {}", event.getPayload().getOrderId(), e.getMessage());
             // In a real system, you might want to publish a failed PaymentEvent here if the error is unrecoverable
         }
     }

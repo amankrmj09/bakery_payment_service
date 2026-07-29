@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_payment_service.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.blubakery.bakery_common_libs.exception.handler.BaseExceptionHandler;
 
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
@@ -9,8 +10,6 @@ import com.blubugtech.bakery_payment_service.exception.order.*;
 import com.blubugtech.bakery_payment_service.enums.ErrorCode;
 
 import feign.FeignException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,13 +26,12 @@ import java.util.Map;
 
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends BaseExceptionHandler  {
-
-    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(PaymentServiceException.class)
     public ResponseEntity<ErrorResponse> handlePaymentServiceException(PaymentServiceException ex, WebRequest request) {
-        logger.error("Payment service error: {}", ex.getMessage());
+        log.error("Payment service error: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
             ErrorCode.PAYMENT_SERVICE_ERROR.name(),
@@ -47,7 +45,7 @@ public class GlobalExceptionHandler extends BaseExceptionHandler  {
 
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ErrorResponse> handleFeignException(FeignException ex, WebRequest request) {
-        logger.error("External service error: {}", ex.getMessage());
+        log.error("External service error: {}", ex.getMessage());
 
         String message = "External service unavailable";
         HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;

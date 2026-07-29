@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_payment_service.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 
 import com.blubugtech.bakery_payment_service.dto.refund.*;
@@ -7,8 +8,6 @@ import com.blubugtech.bakery_payment_service.dto.refund.*;
 import com.blubugtech.bakery_payment_service.entity.Refund;
 import com.blubugtech.bakery_payment_service.service.RefundService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,9 +29,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/refunds")
 
+@Slf4j
 public class RefundController {
-
-    private static final Logger logger = LoggerFactory.getLogger(RefundController.class);
 
     final private RefundService refundService;
 
@@ -47,7 +45,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Create refund request received for payment: {}", request.getPaymentId());
+        log.info("Create refund request received for payment: {}", request.getPaymentId());
 
         // Use header userId if available (from Gateway)
         if (userId != null) {
@@ -56,7 +54,7 @@ public class RefundController {
 
         RefundResponse refund = refundService.createRefund(request);
 
-        logger.info("Refund created successfully: {}", refund.getRefundReference());
+        log.info("Refund created successfully: {}", refund.getRefundReference());
         return ResponseEntity.status(HttpStatus.CREATED).body(refund);
     }
 
@@ -70,7 +68,7 @@ public class RefundController {
             @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get all refunds request received (page: {}, size: {})", page, size);
+        log.info("Get all refunds request received (page: {}, size: {})", page, size);
 
         // Only admins can view all refunds
         if (!"ADMIN".equals(userRole)) {
@@ -82,7 +80,7 @@ public class RefundController {
 
         Page<RefundResponse> refunds = refundService.getAllRefunds(pageable);
 
-        logger.info("Retrieved {} refunds (page {} of {})", refunds.getContent().size(),
+        log.info("Retrieved {} refunds (page {} of {})", refunds.getContent().size(),
                    page + 1, refunds.getTotalPages());
         return ResponseEntity.ok(refunds);
     }
@@ -94,7 +92,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refund by ID request received: {}", refundId);
+        log.info("Get refund by ID request received: {}", refundId);
 
         RefundResponse refund = refundService.getRefundById(refundId);
 
@@ -103,7 +101,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        logger.info("Refund retrieved: {}", refund.getRefundReference());
+        log.info("Refund retrieved: {}", refund.getRefundReference());
         return ResponseEntity.ok(refund);
     }
 
@@ -114,7 +112,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refund by reference request received: {}", refundReference);
+        log.info("Get refund by reference request received: {}", refundReference);
 
         RefundResponse refund = refundService.getRefundByReference(refundReference);
 
@@ -123,7 +121,7 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        logger.info("Refund found: {}", refundReference);
+        log.info("Refund found: {}", refundReference);
         return ResponseEntity.ok(refund);
     }
 
@@ -134,7 +132,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refunds by payment ID request received: {}", paymentId);
+        log.info("Get refunds by payment ID request received: {}", paymentId);
 
         List<RefundResponse> refunds = refundService.getRefundsByPaymentId(paymentId);
 
@@ -145,7 +143,7 @@ public class RefundController {
                     .toList();
         }
 
-        logger.info("Retrieved {} refunds for payment", refunds.size());
+        log.info("Retrieved {} refunds for payment", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -156,7 +154,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID requestUserId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refunds by user ID request received: {}", userId);
+        log.info("Get refunds by user ID request received: {}", userId);
 
         // Check if user can access these refunds (unless admin)
         if (requestUserId != null && !"ADMIN".equals(userRole) && !userId.equals(requestUserId)) {
@@ -165,7 +163,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.getRefundsByUser(userId);
 
-        logger.info("Retrieved {} refunds for user", refunds.size());
+        log.info("Retrieved {} refunds for user", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -176,7 +174,7 @@ public class RefundController {
             @PathVariable RefundStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refunds by status request received: {}", status);
+        log.info("Get refunds by status request received: {}", status);
 
         // Only admins can view refunds by status
         if (!"ADMIN".equals(userRole)) {
@@ -185,7 +183,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.getRefundsByStatus(status);
 
-        logger.info("Retrieved {} refunds with status {}", refunds.size(), status);
+        log.info("Retrieved {} refunds with status {}", refunds.size(), status);
         return ResponseEntity.ok(refunds);
     }
 
@@ -197,7 +195,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Approve refund request received: {}", refundId);
+        log.info("Approve refund request received: {}", refundId);
 
         // Only admins can approve refunds
         if (!"ADMIN".equals(userRole)) {
@@ -206,7 +204,7 @@ public class RefundController {
 
         RefundResponse refund = refundService.approveRefund(refundId, userId);
 
-        logger.info("Refund approved successfully: {}", refundId);
+        log.info("Refund approved successfully: {}", refundId);
         return ResponseEntity.ok(refund);
     }
 
@@ -219,7 +217,7 @@ public class RefundController {
             @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Reject refund request received: {}", refundId);
+        log.info("Reject refund request received: {}", refundId);
 
         // Only admins can reject refunds
         if (!"ADMIN".equals(userRole)) {
@@ -229,7 +227,7 @@ public class RefundController {
         String reason = request.get("reason");
         RefundResponse refund = refundService.rejectRefund(refundId, reason, userId);
 
-        logger.info("Refund rejected successfully: {}", refundId);
+        log.info("Refund rejected successfully: {}", refundId);
         return ResponseEntity.ok(refund);
     }
 
@@ -239,7 +237,7 @@ public class RefundController {
     public ResponseEntity<List<RefundResponse>> getPendingRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get pending refunds request received");
+        log.info("Get pending refunds request received");
 
         // Only admins can view pending refunds
         if (!"ADMIN".equals(userRole)) {
@@ -248,7 +246,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.getPendingRefunds();
 
-        logger.info("Retrieved {} pending refunds", refunds.size());
+        log.info("Retrieved {} pending refunds", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -258,7 +256,7 @@ public class RefundController {
     public ResponseEntity<List<RefundResponse>> getCompletedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get completed refunds request received");
+        log.info("Get completed refunds request received");
 
         // Only admins can view completed refunds
         if (!"ADMIN".equals(userRole)) {
@@ -267,7 +265,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.getCompletedRefunds();
 
-        logger.info("Retrieved {} completed refunds", refunds.size());
+        log.info("Retrieved {} completed refunds", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -277,7 +275,7 @@ public class RefundController {
     public ResponseEntity<List<RefundResponse>> getFailedRefunds(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get failed refunds request received");
+        log.info("Get failed refunds request received");
 
         // Only admins can view failed refunds
         if (!"ADMIN".equals(userRole)) {
@@ -286,7 +284,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.getFailedRefunds();
 
-        logger.info("Retrieved {} failed refunds", refunds.size());
+        log.info("Retrieved {} failed refunds", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -297,7 +295,7 @@ public class RefundController {
             @RequestParam String query,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Search refunds request received with query: {}", query);
+        log.info("Search refunds request received with query: {}", query);
 
         // Only admins can search all refunds
         if (!"ADMIN".equals(userRole)) {
@@ -306,7 +304,7 @@ public class RefundController {
 
         List<RefundResponse> refunds = refundService.searchRefunds(query);
 
-        logger.info("Search returned {} refunds", refunds.size());
+        log.info("Search returned {} refunds", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -323,7 +321,7 @@ public class RefundController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Advanced filter search request received");
+        log.info("Advanced filter search request received");
 
         // Only admins can use advanced filters
         if (!"ADMIN".equals(userRole)) {
@@ -334,7 +332,7 @@ public class RefundController {
                 // status, requestedBy, approvedBy, minAmount, maxAmount, startDate, endDate);
         List<RefundResponse> refunds = new java.util.ArrayList<>();
 
-        logger.info("Filter search returned {} refunds", refunds.size());
+        log.info("Filter search returned {} refunds", refunds.size());
         return ResponseEntity.ok(refunds);
     }
 
@@ -346,7 +344,7 @@ public class RefundController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get refund statistics request received");
+        log.info("Get refund statistics request received");
 
         // Only admins can view statistics
         if (!"ADMIN".equals(userRole)) {
@@ -363,7 +361,7 @@ public class RefundController {
 
         Map<String, Object> statistics = refundService.getRefundStatistics(startDate, endDate);
 
-        logger.info("Refund statistics retrieved");
+        log.info("Refund statistics retrieved");
         return ResponseEntity.ok(statistics);
     }
 

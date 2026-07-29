@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_payment_service.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
@@ -23,8 +24,6 @@ import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayR
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -44,9 +43,8 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 
     final private PaymentRepository paymentRepository;
 
@@ -96,7 +94,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Create payment
     public PaymentResponse createPayment(PaymentRequest request) {
-        logger.info("Creating payment for order: {} amount: {}", request.getOrderId(), request.getAmount());
+        log.info("Creating payment for order: {} amount: {}", request.getOrderId(), request.getAmount());
 
         try {
             // Validate payment request
@@ -141,11 +139,11 @@ public class PaymentServiceImpl implements PaymentService {
             // Save payment
             Payment savedPayment = paymentRepository.save(payment);
 
-            logger.info("Payment created successfully (PENDING for OTP): {}", savedPayment.getPaymentReference());
+            log.info("Payment created successfully (PENDING for OTP): {}", savedPayment.getPaymentReference());
             return PaymentResponse.from(savedPayment);
 
         } catch (Exception e) {
-            logger.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage());
+            log.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage());
             throw new PaymentServiceException("Failed to create payment: " + e.getMessage());
         }
     }
@@ -153,7 +151,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get payment by ID
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentById(UUID paymentId) {
-        logger.debug("Fetching payment by ID: {}", paymentId);
+        log.debug("Fetching payment by ID: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
@@ -164,7 +162,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get payment by reference
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentByReference(String paymentReference) {
-        logger.debug("Fetching payment by reference: {}", paymentReference);
+        log.debug("Fetching payment by reference: {}", paymentReference);
 
         Payment payment = paymentRepository.findByPaymentReference(paymentReference)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with reference: " + paymentReference));
@@ -175,7 +173,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get payment by order ID
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentByOrderId(UUID orderId) {
-        logger.debug("Fetching payment by order ID: {}", orderId);
+        log.debug("Fetching payment by order ID: {}", orderId);
 
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found for order: " + orderId));
@@ -186,7 +184,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get payments by user ID
     @Transactional(readOnly = true)
     public List<PaymentResponse> getPaymentsByUserId(UUID userId) {
-        logger.debug("Fetching payments for user: {}", userId);
+        log.debug("Fetching payments for user: {}", userId);
 
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(PaymentResponse::from)
@@ -196,7 +194,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get payments by status
     @Transactional(readOnly = true)
     public List<PaymentResponse> getPaymentsByStatus(PaymentStatus status) {
-        logger.debug("Fetching payments by status: {}", status);
+        log.debug("Fetching payments by status: {}", status);
 
         return paymentRepository.findByStatusOrderByCreatedAtDesc(status).stream()
                 .map(PaymentResponse::from)
@@ -206,7 +204,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Get all payments with pagination
     @Transactional(readOnly = true)
     public Page<PaymentResponse> getAllPayments(Pageable pageable) {
-        logger.debug("Fetching all payments with pagination");
+        log.debug("Fetching all payments with pagination");
 
         return paymentRepository.findAll(pageable)
                 .map(PaymentResponse::from);
@@ -214,7 +212,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Update payment status
     public PaymentResponse updatePaymentStatus(UUID paymentId, PaymentStatusUpdateRequest request) {
-        logger.info("Updating payment status: {} to {}", paymentId, request.getStatus());
+        log.info("Updating payment status: {} to {}", paymentId, request.getStatus());
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
@@ -244,7 +242,7 @@ public class PaymentServiceImpl implements PaymentService {
         // Notify user
         sendPaymentNotificationAsync(updatedPayment);
 
-        logger.info("Payment status updated successfully: {} from {} to {}",
+        log.info("Payment status updated successfully: {} from {} to {}",
                    paymentId, oldStatus, request.getStatus());
 
         return PaymentResponse.from(updatedPayment);
@@ -252,7 +250,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Cancel payment
     public PaymentResponse cancelPayment(UUID paymentId, String reason) {
-        logger.info("Cancelling payment: {} with reason: {}", paymentId, reason);
+        log.info("Cancelling payment: {} with reason: {}", paymentId, reason);
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
@@ -276,7 +274,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setGatewayResponse(voidResponse.getGatewayResponse());
                 payment.setGatewayRawResponse(voidResponse.getRawResponse());
             } catch (Exception e) {
-                logger.warn("Failed to void payment at gateway: {}", e.getMessage());
+                log.warn("Failed to void payment at gateway: {}", e.getMessage());
             }
         }
 
@@ -285,13 +283,13 @@ public class PaymentServiceImpl implements PaymentService {
         // Notify order service
         notifyOrderServiceAsync(cancelledPayment);
 
-        logger.info("Payment cancelled successfully: {}", paymentId);
+        log.info("Payment cancelled successfully: {}", paymentId);
         return PaymentResponse.from(cancelledPayment);
     }
 
     // Retry failed payment
     public PaymentResponse retryPayment(UUID paymentId) {
-        logger.info("Retrying failed payment: {}", paymentId);
+        log.info("Retrying failed payment: {}", paymentId);
 
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
@@ -310,14 +308,14 @@ public class PaymentServiceImpl implements PaymentService {
         // Process payment asynchronously
         processPaymentAsync(savedPayment);
 
-        logger.info("Payment retry initiated: {}", paymentId);
+        log.info("Payment retry initiated: {}", paymentId);
         return PaymentResponse.from(savedPayment);
     }
 
     // Get payment statistics
     @Transactional(readOnly = true)
     public Map<String, Object> getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate) {
-        logger.debug("Fetching payment statistics");
+        log.debug("Fetching payment statistics");
 
         try {
             Object[] successRate = paymentRepository.getPaymentSuccessRate(startDate, endDate);
@@ -345,7 +343,7 @@ public class PaymentServiceImpl implements PaymentService {
                     ))
             );
         } catch (Exception e) {
-            logger.error("Error fetching payment statistics: {}", e.getMessage());
+            log.error("Error fetching payment statistics: {}", e.getMessage());
             return Map.of(
                     "error", "Statistics temporarily unavailable",
                     "message", e.getMessage()
@@ -356,7 +354,7 @@ public class PaymentServiceImpl implements PaymentService {
     // Private helper methods
     @Async
     protected void processPaymentAsync(Payment payment) {
-        logger.info("Processing payment asynchronously: {}", payment.getPaymentReference());
+        log.info("Processing payment asynchronously: {}", payment.getPaymentReference());
 
         try {
             // Update status to processing
@@ -410,11 +408,11 @@ public class PaymentServiceImpl implements PaymentService {
             // Notify user
             sendPaymentNotificationAsync(payment);
 
-            logger.info("Payment processing completed: {} status: {}",
+            log.info("Payment processing completed: {} status: {}",
                        payment.getPaymentReference(), payment.getStatus());
 
         } catch (Exception e) {
-            logger.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage());
+            log.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage());
 
             // Update payment as failed
             payment.setStatus(PaymentStatus.FAILED);
@@ -447,9 +445,9 @@ public class PaymentServiceImpl implements PaymentService {
                     .build()
             ).build();
             paymentEventPublisher.publishPaymentStatusUpdated(event);
-            logger.debug("Payment status event published for payment: {}", payment.getPaymentReference());
+            log.debug("Payment status event published for payment: {}", payment.getPaymentReference());
         } catch (Exception e) {
-            logger.error("Failed to publish payment event for {}: {}",
+            log.error("Failed to publish payment event for {}: {}",
                         payment.getPaymentReference(), e.getMessage());
         }
     }
@@ -485,7 +483,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (e instanceof PaymentServiceException || e instanceof InvalidPaymentAmountException) {
                 throw e;
             }
-            logger.error("Failed to validate order {}: {}", request.getOrderId(), e.getMessage());
+            log.error("Failed to validate order {}: {}", request.getOrderId(), e.getMessage());
             throw new PaymentServiceException("Failed to validate order details");
         }
 
@@ -551,7 +549,7 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (Exception e) {
-            logger.warn("Failed to convert metadata to JSON: {}", e.getMessage());
+            log.warn("Failed to convert metadata to JSON: {}", e.getMessage());
             return "{}";
         }
     }

@@ -1,11 +1,10 @@
 package com.blubugtech.bakery_payment_service.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 import com.blubugtech.bakery_payment_service.dto.payment.PaymentStatusUpdateRequest;
 import com.blubugtech.bakery_payment_service.service.OtpService;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +16,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/payments/mock")
 @Tag(name = "Payment OTP", description = "Mock OTP Payment APIs")
+@Slf4j
 public class PaymentOtpController {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaymentOtpController.class);
 
     private final OtpService otpService;
     private final PaymentService paymentService;
@@ -35,7 +33,7 @@ public class PaymentOtpController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
         
-        logger.info("Sending OTP for payment ID: {}", paymentId);
+        log.info("Sending OTP for payment ID: {}", paymentId);
         String otp = otpService.generateAndSendOtp(paymentId.toString(), userId, email);
         // Do not return OTP in production, only for learning purposes
         return ResponseEntity.ok(Map.of("message", "OTP sent successfully", "mock_otp", otp));
@@ -44,7 +42,7 @@ public class PaymentOtpController {
     @PostMapping("/{paymentId}/verify-otp")
     public ResponseEntity<Map<String, String>> verifyOtp(@PathVariable UUID paymentId, @RequestBody Map<String, String> request) {
         String otp = request.get("otp");
-        logger.info("Verifying OTP for payment ID: {}", paymentId);
+        log.info("Verifying OTP for payment ID: {}", paymentId);
         
         boolean isValid = otpService.verifyOtp(paymentId.toString(), otp);
         if (isValid) {
@@ -64,7 +62,7 @@ public class PaymentOtpController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
         
-        logger.info("Resending OTP for payment ID: {}", paymentId);
+        log.info("Resending OTP for payment ID: {}", paymentId);
         String otp = otpService.resendOtp(paymentId.toString(), userId, email);
         if (otp == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Payment session expired. Please restart checkout."));

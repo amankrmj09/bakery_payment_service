@@ -1,13 +1,12 @@
 package com.blubugtech.bakery_payment_service.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
 
 import com.blubugtech.bakery_payment_service.dto.transaction.*;
 import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
 import com.blubugtech.bakery_payment_service.service.PaymentTransactionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +22,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/transactions")
 
+@Slf4j
 public class TransactionController {
-
-    private static final Logger logger = LoggerFactory.getLogger(TransactionController.class);
 
 
     final private PaymentTransactionService paymentTransactionService;
@@ -40,11 +38,11 @@ public class TransactionController {
             @PathVariable UUID transactionId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get transaction by ID request received: {}", transactionId);
+        log.info("Get transaction by ID request received: {}", transactionId);
 
         PaymentTransactionResponse transaction = paymentTransactionService.getTransactionById(transactionId);
 
-        logger.info("Transaction retrieved: {}", transactionId);
+        log.info("Transaction retrieved: {}", transactionId);
         return ResponseEntity.ok(transaction);
     }
 
@@ -54,11 +52,11 @@ public class TransactionController {
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get transactions by payment ID request received: {}", paymentId);
+        log.info("Get transactions by payment ID request received: {}", paymentId);
 
         List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByPaymentId(paymentId);
 
-        logger.info("Retrieved {} transactions for payment", transactions.size());
+        log.info("Retrieved {} transactions for payment", transactions.size());
         return ResponseEntity.ok(transactions);
     }
 
@@ -69,7 +67,7 @@ public class TransactionController {
             @PathVariable TransactionStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get transactions by status request received: {}", status);
+        log.info("Get transactions by status request received: {}", status);
 
         // Only admins can view transactions by status
         if (!"ADMIN".equals(userRole)) {
@@ -78,7 +76,7 @@ public class TransactionController {
 
         List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByStatus(status);
 
-        logger.info("Retrieved {} transactions with status {}", transactions.size(), status);
+        log.info("Retrieved {} transactions with status {}", transactions.size(), status);
         return ResponseEntity.ok(transactions);
     }
 
@@ -89,7 +87,7 @@ public class TransactionController {
             @PathVariable TransactionType type,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get transactions by type request received: {}", type);
+        log.info("Get transactions by type request received: {}", type);
 
         // Only admins can view transactions by type
         if (!"ADMIN".equals(userRole)) {
@@ -98,7 +96,7 @@ public class TransactionController {
 
         List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByType(type);
 
-        logger.info("Retrieved {} transactions with type {}", transactions.size(), type);
+        log.info("Retrieved {} transactions with type {}", transactions.size(), type);
         return ResponseEntity.ok(transactions);
     }
 
@@ -108,7 +106,7 @@ public class TransactionController {
     public ResponseEntity<List<PaymentTransactionResponse>> getPendingTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get pending transactions request received");
+        log.info("Get pending transactions request received");
 
         // Only admins can view pending transactions
         if (!"ADMIN".equals(userRole)) {
@@ -117,7 +115,7 @@ public class TransactionController {
 
         List<PaymentTransactionResponse> transactions = paymentTransactionService.getPendingTransactions();
 
-        logger.info("Retrieved {} pending transactions", transactions.size());
+        log.info("Retrieved {} pending transactions", transactions.size());
         return ResponseEntity.ok(transactions);
     }
 
@@ -127,7 +125,7 @@ public class TransactionController {
     public ResponseEntity<List<PaymentTransactionResponse>> getFailedTransactions(
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get failed transactions request received");
+        log.info("Get failed transactions request received");
 
         // Only admins can view failed transactions
         if (!"ADMIN".equals(userRole)) {
@@ -136,7 +134,7 @@ public class TransactionController {
 
         List<PaymentTransactionResponse> transactions = paymentTransactionService.getFailedTransactions();
 
-        logger.info("Retrieved {} failed transactions", transactions.size());
+        log.info("Retrieved {} failed transactions", transactions.size());
         return ResponseEntity.ok(transactions);
     }
 
@@ -148,7 +146,7 @@ public class TransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
-        logger.info("Get transaction statistics request received");
+        log.info("Get transaction statistics request received");
 
         // Only admins can view statistics
         if (!"ADMIN".equals(userRole)) {
@@ -165,7 +163,7 @@ public class TransactionController {
 
         Map<String, Object> statistics = paymentTransactionService.getTransactionStatistics(startDate, endDate);
 
-        logger.info("Transaction statistics retrieved");
+        log.info("Transaction statistics retrieved");
         return ResponseEntity.ok(statistics);
     }
 

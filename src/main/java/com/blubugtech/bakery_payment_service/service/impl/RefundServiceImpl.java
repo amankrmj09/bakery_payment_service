@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_payment_service.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 
@@ -23,8 +24,6 @@ import com.blubugtech.bakery_payment_service.client.UserClient;
 import org.blubakery.bakery_common_libs.event.PaymentEvent;
 import org.blubakery.bakery_common_libs.contract.messaging.PaymentPayload;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,9 +42,8 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class RefundServiceImpl implements RefundService {
-
-    private static final Logger logger = LoggerFactory.getLogger(RefundService.class);
 
     final private RefundRepository refundRepository;
 
@@ -71,7 +69,7 @@ public class RefundServiceImpl implements RefundService {
 
     // Create refund
     public RefundResponse createRefund(RefundRequest request) {
-        logger.info("Creating refund for payment: {} amount: {}", request.getPaymentId(), request.getAmount());
+        log.info("Creating refund for payment: {} amount: {}", request.getPaymentId(), request.getAmount());
 
         try {
             // Get payment
@@ -96,11 +94,11 @@ public class RefundServiceImpl implements RefundService {
             // Process refund asynchronously
             processRefundAsync(savedRefund);
 
-            logger.info("Refund created successfully: {}", savedRefund.getRefundReference());
+            log.info("Refund created successfully: {}", savedRefund.getRefundReference());
             return RefundResponse.from(savedRefund);
 
         } catch (Exception e) {
-            logger.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage());
+            log.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage());
             throw new PaymentServiceException("Failed to create refund: " + e.getMessage());
         }
     }
@@ -108,7 +106,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refund by ID
     @Transactional(readOnly = true)
     public RefundResponse getRefundById(UUID refundId) {
-        logger.debug("Fetching refund by ID: {}", refundId);
+        log.debug("Fetching refund by ID: {}", refundId);
 
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with ID: " + refundId));
@@ -119,7 +117,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refund by reference
     @Transactional(readOnly = true)
     public RefundResponse getRefundByReference(String refundReference) {
-        logger.debug("Fetching refund by reference: {}", refundReference);
+        log.debug("Fetching refund by reference: {}", refundReference);
 
         Refund refund = refundRepository.findByRefundReference(refundReference)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with reference: " + refundReference));
@@ -130,7 +128,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refunds by payment ID
     @Transactional(readOnly = true)
     public List<RefundResponse> getRefundsByPaymentId(UUID paymentId) {
-        logger.debug("Fetching refunds for payment: {}", paymentId);
+        log.debug("Fetching refunds for payment: {}", paymentId);
 
         return refundRepository.findByPaymentIdOrderByCreatedAtDesc(paymentId).stream()
                 .map(RefundResponse::from)
@@ -140,7 +138,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refunds by status
     @Transactional(readOnly = true)
     public List<RefundResponse> getRefundsByStatus(RefundStatus status) {
-        logger.debug("Fetching refunds by status: {}", status);
+        log.debug("Fetching refunds by status: {}", status);
 
         return refundRepository.findByStatusOrderByCreatedAtDesc(status).stream()
                 .map(RefundResponse::from)
@@ -150,7 +148,7 @@ public class RefundServiceImpl implements RefundService {
     // Get all refunds with pagination
     @Transactional(readOnly = true)
     public Page<RefundResponse> getAllRefunds(Pageable pageable) {
-        logger.debug("Fetching all refunds with pagination");
+        log.debug("Fetching all refunds with pagination");
 
         return refundRepository.findAll(pageable)
                 .map(RefundResponse::from);
@@ -159,7 +157,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refunds by user
     @Transactional(readOnly = true)
     public List<RefundResponse> getRefundsByUser(UUID userId) {
-        logger.debug("Fetching refunds requested by user: {}", userId);
+        log.debug("Fetching refunds requested by user: {}", userId);
 
         return refundRepository.findByRequestedByOrderByCreatedAtDesc(userId).stream()
                 .map(RefundResponse::from)
@@ -168,7 +166,7 @@ public class RefundServiceImpl implements RefundService {
 
     // Approve refund
     public RefundResponse approveRefund(UUID refundId, UUID approvedBy) {
-        logger.info("Approving refund: {} by user: {}", refundId, approvedBy);
+        log.info("Approving refund: {} by user: {}", refundId, approvedBy);
 
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with ID: " + refundId));
@@ -186,13 +184,13 @@ public class RefundServiceImpl implements RefundService {
         // Process refund asynchronously
         processRefundAsync(approvedRefund);
 
-        logger.info("Refund approved: {}", refundId);
+        log.info("Refund approved: {}", refundId);
         return RefundResponse.from(approvedRefund);
     }
 
     // Reject refund
     public RefundResponse rejectRefund(UUID refundId, String reason, UUID rejectedBy) {
-        logger.info("Rejecting refund: {} by user: {} reason: {}", refundId, rejectedBy, reason);
+        log.info("Rejecting refund: {} by user: {} reason: {}", refundId, rejectedBy, reason);
 
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with ID: " + refundId));
@@ -207,7 +205,7 @@ public class RefundServiceImpl implements RefundService {
         refund.setApprovedBy(rejectedBy); // Track who rejected it
 
         Refund rejectedRefund = refundRepository.save(refund);
-        logger.info("Refund rejected: {}", refundId);
+        log.info("Refund rejected: {}", refundId);
 
         return RefundResponse.from(rejectedRefund);
     }
@@ -215,7 +213,7 @@ public class RefundServiceImpl implements RefundService {
     // Get pending refunds
     @Transactional(readOnly = true)
     public List<RefundResponse> getPendingRefunds() {
-        logger.debug("Fetching pending refunds");
+        log.debug("Fetching pending refunds");
 
         return refundRepository.findPendingRefunds().stream()
                 .map(RefundResponse::from)
@@ -225,7 +223,7 @@ public class RefundServiceImpl implements RefundService {
     // Get completed refunds
     @Transactional(readOnly = true)
     public List<RefundResponse> getCompletedRefunds() {
-        logger.debug("Fetching completed refunds");
+        log.debug("Fetching completed refunds");
 
         return refundRepository.findCompletedRefunds().stream()
                 .map(RefundResponse::from)
@@ -235,7 +233,7 @@ public class RefundServiceImpl implements RefundService {
     // Get failed refunds
     @Transactional(readOnly = true)
     public List<RefundResponse> getFailedRefunds() {
-        logger.debug("Fetching failed refunds");
+        log.debug("Fetching failed refunds");
 
         return refundRepository.findFailedRefunds().stream()
                 .map(RefundResponse::from)
@@ -245,7 +243,7 @@ public class RefundServiceImpl implements RefundService {
     // Get refund statistics
     @Transactional(readOnly = true)
     public Map<String, Object> getRefundStatistics(LocalDateTime startDate, LocalDateTime endDate) {
-        logger.debug("Fetching refund statistics");
+        log.debug("Fetching refund statistics");
 
         try {
             Object[] successRate = refundRepository.getRefundSuccessRate(startDate, endDate);
@@ -265,7 +263,7 @@ public class RefundServiceImpl implements RefundService {
                     )
             );
         } catch (Exception e) {
-            logger.error("Error fetching refund statistics: {}", e.getMessage());
+            log.error("Error fetching refund statistics: {}", e.getMessage());
             return Map.of(
                     "error", "Refund statistics temporarily unavailable",
                     "message", e.getMessage()
@@ -276,7 +274,7 @@ public class RefundServiceImpl implements RefundService {
     // Search refunds
     @Transactional(readOnly = true)
     public List<RefundResponse> searchRefunds(String searchTerm) {
-        logger.debug("Searching refunds with term: {}", searchTerm);
+        log.debug("Searching refunds with term: {}", searchTerm);
 
         return refundRepository.searchRefundsByText(searchTerm).stream()
                 .map(RefundResponse::from)
@@ -288,7 +286,7 @@ public class RefundServiceImpl implements RefundService {
     public List<RefundResponse> getRefundsWithFilters(RefundStatus status, UUID requestedBy,
                                                     UUID approvedBy, BigDecimal minAmount, BigDecimal maxAmount,
                                                     LocalDateTime startDate, LocalDateTime endDate) {
-        logger.debug("Fetching refunds with filters");
+        log.debug("Fetching refunds with filters");
 
         return refundRepository.findRefundsWithFilters(status, requestedBy, approvedBy,
                                                       minAmount, maxAmount, startDate, endDate).stream()
@@ -299,7 +297,7 @@ public class RefundServiceImpl implements RefundService {
     // Private helper methods
     @Async
     protected void processRefundAsync(Refund refund) {
-        logger.info("Processing refund asynchronously: {}", refund.getRefundReference());
+        log.info("Processing refund asynchronously: {}", refund.getRefundReference());
 
         try {
             // Process through gateway
@@ -330,11 +328,11 @@ public class RefundServiceImpl implements RefundService {
             // Update payment status if fully refunded
             updatePaymentRefundStatus(refund.getPayment());
 
-            logger.info("Refund processing completed: {} status: {}",
+            log.info("Refund processing completed: {} status: {}",
                        refund.getRefundReference(), refund.getStatus());
 
         } catch (Exception e) {
-            logger.error("Refund processing failed: {} - {}", refund.getRefundReference(), e.getMessage());
+            log.error("Refund processing failed: {} - {}", refund.getRefundReference(), e.getMessage());
 
             // Update refund as failed
             refund.setStatus(RefundStatus.FAILED);
@@ -368,7 +366,7 @@ public class RefundServiceImpl implements RefundService {
             payment.setStatus(PaymentStatus.REFUNDED);
             paymentRepository.save(payment);
 
-            logger.info("Payment {} marked as fully refunded", payment.getPaymentReference());
+            log.info("Payment {} marked as fully refunded", payment.getPaymentReference());
         }
     }
 
@@ -376,7 +374,7 @@ public class RefundServiceImpl implements RefundService {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (Exception e) {
-            logger.warn("Failed to convert metadata to JSON: {}", e.getMessage());
+            log.warn("Failed to convert metadata to JSON: {}", e.getMessage());
             return "{}";
         }
     }
@@ -407,9 +405,9 @@ public class RefundServiceImpl implements RefundService {
                 .build();
                 
             paymentEventPublisher.publishPaymentStatusUpdated(event);
-            logger.info("Published PAYMENT_REFUNDED event for refund: {}", refund.getRefundReference());
+            log.info("Published PAYMENT_REFUNDED event for refund: {}", refund.getRefundReference());
         } catch (Exception e) {
-            logger.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage());
+            log.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage());
         }
     }
 
