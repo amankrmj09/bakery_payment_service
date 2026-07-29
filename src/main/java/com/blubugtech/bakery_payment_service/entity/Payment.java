@@ -70,7 +70,7 @@ public class Payment {
 
     @Column(name = "currency_code", length = 3, nullable = false)
     @Size(min = 3, max = 3, message = "Currency code must be 3 characters")
-    private String currencyCode = "INR";
+    private String currencyCode = org.blubakery.common.core.constants.GlobalAppConstants.CURRENCY_CODE;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
