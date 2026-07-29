@@ -48,7 +48,7 @@ public class PaymentTransaction {
     private BigDecimal amount;
 
     @Column(name = "currency_code", length = 3, nullable = false)
-    private String currencyCode = "USD";
+    private String currencyCode = org.blubakery.common.core.constants.GlobalAppConstants.CURRENCY_CODE;
 
     @Column(name = "gateway_transaction_id", length = 100)
     private String gatewayTransactionId;

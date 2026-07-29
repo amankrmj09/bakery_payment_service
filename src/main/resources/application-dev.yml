@@ -19,3 +19,7 @@ payment:
       client-secret: xxxx
     square:
       access-token: xxxx
+  limits:
+    min-amount: 50.00
+    max-amount: 500000.00
+    daily-limit: 1000000.00

@@ -34,7 +34,7 @@ public class PaymentRequest {
     private BigDecimal amount;
 
     @Size(min = 3, max = 3, message = "Currency code must be 3 characters")
-    private String currencyCode = "USD";
+    private String currencyCode = org.blubakery.common.core.constants.GlobalAppConstants.CURRENCY_CODE;
 
     private String description;
 

@@ -48,7 +48,7 @@ public class Refund {
     private BigDecimal amount;
 
     @Column(name = "currency_code", length = 3, nullable = false)
-    private String currencyCode = "USD";
+    private String currencyCode = org.blubakery.common.core.constants.GlobalAppConstants.CURRENCY_CODE;
 
     @Column(name = "reason", columnDefinition = "TEXT")
     private String reason;
