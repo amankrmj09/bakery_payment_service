@@ -1,8 +1,8 @@
 package com.blubugtech.bakery_payment_service.integration.kafka.producer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.blubakery.bakery_common_libs.constants.KafkaTopics;
-import org.blubakery.bakery_common_libs.event.PaymentEvent;
+import org.blubakery.common.messaging.constants.KafkaTopics;
+import org.blubakery.common.messaging.event.PaymentEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 

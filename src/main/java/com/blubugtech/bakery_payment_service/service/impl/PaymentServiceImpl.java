@@ -432,8 +432,8 @@ public class PaymentServiceImpl implements PaymentService {
     protected void notifyOrderServiceAsync(Payment payment) {
         try {
             com.blubugtech.bakery_payment_service.client.UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
-            org.blubakery.bakery_common_libs.event.PaymentEvent event = org.blubakery.bakery_common_libs.event.PaymentEvent.builder().payload(
-                org.blubakery.bakery_common_libs.contract.messaging.PaymentPayload.builder()
+            org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder().payload(
+                org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
                     .paymentId(payment.getId())
                     .orderId(payment.getOrderId())
                     .userId(payment.getUserId())

@@ -1,7 +1,7 @@
 package com.blubugtech.bakery_payment_service.client;
 
 import lombok.extern.slf4j.Slf4j;
-import org.blubakery.bakery_common_libs.exception.common.ServiceUnavailableException;
+import org.blubakery.common.core.exception.common.ServiceUnavailableException;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
