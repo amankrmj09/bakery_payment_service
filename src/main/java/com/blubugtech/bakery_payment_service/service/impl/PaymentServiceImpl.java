@@ -441,6 +441,8 @@ public class PaymentServiceImpl implements PaymentService {
                     .customerPhone(userDto != null ? userDto.getPhone() : null)
                     .status(payment.getStatus().name())
                     .amount(payment.getAmount())
+                    .refundAmount(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? payment.getAmount() : null)
+                    .refundReason(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? (payment.getFailureReason() != null && !payment.getFailureReason().trim().isEmpty() ? payment.getFailureReason() : "Refund processed by Admin") : null)
                     .timestamp(LocalDateTime.now())
                     .build()
             ).build();
@@ -540,6 +542,9 @@ public class PaymentServiceImpl implements PaymentService {
             }
             case CANCELLED -> {
                 payment.setCancelledAt(now);
+                payment.setFailureReason(reason);
+            }
+            case REFUNDED -> {
                 payment.setFailureReason(reason);
             }
         }
