@@ -225,7 +225,7 @@ public class PaymentTransactionServiceImpl implements PaymentTransactionService 
                     )
             );
         } catch (Exception e) {
-            log.error("Error fetching transaction statistics: {}", e.getMessage());
+            log.error("Error fetching transaction statistics: {}", e.getMessage(), e);
             return Map.of(
                     "error", "Transaction statistics temporarily unavailable",
                     "message", e.getMessage()

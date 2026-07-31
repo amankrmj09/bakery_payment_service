@@ -143,7 +143,7 @@ public class PaymentServiceImpl implements PaymentService {
             return PaymentResponse.from(savedPayment);
 
         } catch (Exception e) {
-            log.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage());
+            log.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage(), e);
             throw new PaymentServiceException("Failed to create payment: " + e.getMessage());
         }
     }
@@ -274,7 +274,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setGatewayResponse(voidResponse.getGatewayResponse());
                 payment.setGatewayRawResponse(voidResponse.getRawResponse());
             } catch (Exception e) {
-                log.warn("Failed to void payment at gateway: {}", e.getMessage());
+                log.warn("Failed to void payment at gateway: {}", e.getMessage(), e);
             }
         }
 
@@ -343,7 +343,7 @@ public class PaymentServiceImpl implements PaymentService {
                     ))
             );
         } catch (Exception e) {
-            log.error("Error fetching payment statistics: {}", e.getMessage());
+            log.error("Error fetching payment statistics: {}", e.getMessage(), e);
             return Map.of(
                     "error", "Statistics temporarily unavailable",
                     "message", e.getMessage()
@@ -412,7 +412,7 @@ public class PaymentServiceImpl implements PaymentService {
                        payment.getPaymentReference(), payment.getStatus());
 
         } catch (Exception e) {
-            log.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage());
+            log.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage(), e);
 
             // Update payment as failed
             payment.setStatus(PaymentStatus.FAILED);
@@ -450,7 +450,7 @@ public class PaymentServiceImpl implements PaymentService {
             log.debug("Payment status event published for payment: {}", payment.getPaymentReference());
         } catch (Exception e) {
             log.error("Failed to publish payment event for {}: {}",
-                        payment.getPaymentReference(), e.getMessage());
+                        payment.getPaymentReference(), e.getMessage(), e);
         }
     }
 
@@ -485,7 +485,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (e instanceof PaymentServiceException || e instanceof InvalidPaymentAmountException) {
                 throw e;
             }
-            log.error("Failed to validate order {}: {}", request.getOrderId(), e.getMessage());
+            log.error("Failed to validate order {}: {}", request.getOrderId(), e.getMessage(), e);
             throw new PaymentServiceException("Failed to validate order details");
         }
 
@@ -554,7 +554,7 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (Exception e) {
-            log.warn("Failed to convert metadata to JSON: {}", e.getMessage());
+            log.warn("Failed to convert metadata to JSON: {}", e.getMessage(), e);
             return "{}";
         }
     }

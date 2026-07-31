@@ -37,7 +37,7 @@ public class PaymentRequestedEventConsumer {
             paymentService.createPayment(request);
             log.info("Successfully initiated payment for order: {}", event.getPayload().getOrderId());
         } catch (Exception e) {
-            log.error("Failed to process payment request event for order {}: {}", event.getPayload().getOrderId(), e.getMessage());
+            log.error("Failed to process payment request event for order {}: {}", event.getPayload().getOrderId(), e.getMessage(), e);
             // In a real system, you might want to publish a failed PaymentEvent here if the error is unrecoverable
         }
     }

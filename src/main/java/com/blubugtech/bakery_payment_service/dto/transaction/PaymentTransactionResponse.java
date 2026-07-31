@@ -12,8 +12,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Setter
 @Getter
+@Slf4j
 public class PaymentTransactionResponse {
 
     // Getters and Setters
@@ -55,6 +58,7 @@ public class PaymentTransactionResponse {
             try {
                 response.metadata = Map.of("raw", transaction.getMetadata());
             } catch (Exception e) {
+                log.error("Failed to parse metadata", e);
                 response.metadata = Map.of("error", "Failed to parse metadata");
             }
         }

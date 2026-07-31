@@ -57,7 +57,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.2 Get All Payments
 - **Method:** `GET`
@@ -65,7 +65,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `Page<PaymentResponseDto>`
+  `Page<PaymentResponse>`
 
 ### 2.3 Get Payment by ID
 - **Method:** `GET`
@@ -73,7 +73,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.4 Get Payment by Reference
 - **Method:** `GET`
@@ -81,7 +81,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.5 Get Payment by Order ID
 - **Method:** `GET`
@@ -89,7 +89,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.6 Get Payments by User ID
 - **Method:** `GET`
@@ -97,7 +97,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentResponseDto>`
+  `List<PaymentResponse>`
 
 ### 2.7 Get Payments by Status
 - **Method:** `GET`
@@ -105,7 +105,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentResponseDto>`
+  `List<PaymentResponse>`
 
 ### 2.8 Update Payment Status
 - **Method:** `PATCH`
@@ -121,7 +121,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.9 Cancel Payment
 - **Method:** `POST`
@@ -134,7 +134,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.10 Retry Payment
 - **Method:** `POST`
@@ -142,7 +142,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `PaymentResponseDto`
+  `PaymentResponse`
 
 ### 2.11 Get Payment Statistics
 - **Method:** `GET`
@@ -156,6 +156,49 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
     "totalAmount": 15000.00,
     "successfulPayments": 140,
     "failedPayments": 10
+  }
+  ```
+
+### 2.12 Send Payment OTP
+- **Method:** `POST`
+- **Path:** `/api/payments/mock/{paymentId}/send-otp`
+- **Type of API:** `Public`
+- **Request Body:** None
+- **Response Body:** `200 OK`
+  ```json
+  {
+    "message": "OTP sent successfully",
+    "mock_otp": "string"
+  }
+  ```
+
+### 2.13 Verify Payment OTP
+- **Method:** `POST`
+- **Path:** `/api/payments/mock/{paymentId}/verify-otp`
+- **Type of API:** `Public`
+- **Request Body:**
+  ```json
+  {
+    "otp": "string"
+  }
+  ```
+- **Response Body:** `200 OK`
+  ```json
+  {
+    "message": "Payment completed successfully"
+  }
+  ```
+
+### 2.14 Resend Payment OTP
+- **Method:** `POST`
+- **Path:** `/api/payments/mock/{paymentId}/resend-otp`
+- **Type of API:** `Public`
+- **Request Body:** None
+- **Response Body:** `200 OK`
+  ```json
+  {
+    "message": "OTP resent successfully",
+    "mock_otp": "string"
   }
   ```
 
@@ -181,7 +224,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
 - **Response Body:** `200 OK`
-  `RefundResponseDto`
+  `RefundResponse`
 
 ### 3.2 Get All Refunds
 - **Method:** `GET`
@@ -189,7 +232,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `Page<RefundResponseDto>`
+  `Page<RefundResponse>`
 
 ### 3.3 Get Refund by ID
 - **Method:** `GET`
@@ -197,7 +240,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `RefundResponseDto`
+  `RefundResponse`
 
 ### 3.4 Get Refund by Reference
 - **Method:** `GET`
@@ -205,7 +248,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `RefundResponseDto`
+  `RefundResponse`
 
 ### 3.5 Get Refunds by Payment ID
 - **Method:** `GET`
@@ -213,7 +256,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.6 Get Refunds by User ID
 - **Method:** `GET`
@@ -221,7 +264,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.7 Get Refunds by Status
 - **Method:** `GET`
@@ -229,7 +272,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.8 Approve Refund
 - **Method:** `POST`
@@ -237,7 +280,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `RefundResponseDto`
+  `RefundResponse`
 
 ### 3.9 Reject Refund
 - **Method:** `POST`
@@ -250,7 +293,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
 - **Response Body:** `200 OK`
-  `RefundResponseDto`
+  `RefundResponse`
 
 ### 3.10 Get Pending Refunds
 - **Method:** `GET`
@@ -258,7 +301,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.11 Get Completed Refunds
 - **Method:** `GET`
@@ -266,7 +309,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.12 Get Failed Refunds
 - **Method:** `GET`
@@ -274,7 +317,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.13 Search Refunds
 - **Method:** `GET`
@@ -282,7 +325,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.14 Advanced Search with Filters
 - **Method:** `GET`
@@ -290,7 +333,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<RefundResponseDto>`
+  `List<RefundResponse>`
 
 ### 3.15 Get Refund Statistics
 - **Method:** `GET`
@@ -317,7 +360,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `PaymentTransactionResponseDto`
+  `PaymentTransactionResponse`
 
 ### 4.2 Get Transactions by Payment ID
 - **Method:** `GET`
@@ -325,7 +368,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentTransactionResponseDto>`
+  `List<PaymentTransactionResponse>`
 
 ### 4.3 Get Transactions by Status
 - **Method:** `GET`
@@ -333,7 +376,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentTransactionResponseDto>`
+  `List<PaymentTransactionResponse>`
 
 ### 4.4 Get Transactions by Type
 - **Method:** `GET`
@@ -341,7 +384,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentTransactionResponseDto>`
+  `List<PaymentTransactionResponse>`
 
 ### 4.5 Get Pending Transactions
 - **Method:** `GET`
@@ -349,7 +392,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentTransactionResponseDto>`
+  `List<PaymentTransactionResponse>`
 
 ### 4.6 Get Failed Transactions
 - **Method:** `GET`
@@ -357,7 +400,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Type of API:** `Admin`
 - **Request Body:** None
 - **Response Body:** `200 OK`
-  `List<PaymentTransactionResponseDto>`
+  `List<PaymentTransactionResponse>`
 
 ### 4.7 Get Transaction Statistics
 - **Method:** `GET`
@@ -378,7 +421,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 
 ## Common DTOs
 
-### PaymentResponseDto
+### PaymentResponse
 ```json
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -407,10 +450,10 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   "netAmount": 97.50,
   "settlementDate": "2023-10-27T10:00:00",
   "transactions": [
-    { /* PaymentTransactionResponseDto */ }
+    { /* PaymentTransactionResponse */ }
   ],
   "refunds": [
-    { /* RefundResponseDto */ }
+    { /* RefundResponse */ }
   ],
   "totalRefundedAmount": 0.00,
   "refundableAmount": 100.00,
@@ -429,7 +472,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 }
 ```
 
-### RefundResponseDto
+### RefundResponse
 ```json
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -456,7 +499,7 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 }
 ```
 
-### PaymentTransactionResponseDto
+### PaymentTransactionResponse
 ```json
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",

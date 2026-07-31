@@ -17,8 +17,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Getter
 @Setter
+@Slf4j
 public class PaymentResponse {
 
     // Getters and Setters (abbreviated for space)
@@ -121,6 +124,7 @@ public class PaymentResponse {
                 // Simple JSON parsing - in real app use ObjectMapper
                 response.metadata = Map.of("raw", payment.getMetadata());
             } catch (Exception e) {
+                log.error("Failed to parse metadata", e);
                 response.metadata = Map.of("error", "Failed to parse metadata");
             }
         }

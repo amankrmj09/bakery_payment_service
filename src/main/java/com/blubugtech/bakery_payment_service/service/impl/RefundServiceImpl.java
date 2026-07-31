@@ -98,7 +98,7 @@ public class RefundServiceImpl implements RefundService {
             return RefundResponse.from(savedRefund);
 
         } catch (Exception e) {
-            log.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage());
+            log.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage(), e);
             throw new PaymentServiceException("Failed to create refund: " + e.getMessage());
         }
     }
@@ -263,7 +263,7 @@ public class RefundServiceImpl implements RefundService {
                     )
             );
         } catch (Exception e) {
-            log.error("Error fetching refund statistics: {}", e.getMessage());
+            log.error("Error fetching refund statistics: {}", e.getMessage(), e);
             return Map.of(
                     "error", "Refund statistics temporarily unavailable",
                     "message", e.getMessage()
@@ -332,7 +332,7 @@ public class RefundServiceImpl implements RefundService {
                        refund.getRefundReference(), refund.getStatus());
 
         } catch (Exception e) {
-            log.error("Refund processing failed: {} - {}", refund.getRefundReference(), e.getMessage());
+            log.error("Refund processing failed: {} - {}", refund.getRefundReference(), e.getMessage(), e);
 
             // Update refund as failed
             refund.setStatus(RefundStatus.FAILED);
@@ -374,7 +374,7 @@ public class RefundServiceImpl implements RefundService {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (Exception e) {
-            log.warn("Failed to convert metadata to JSON: {}", e.getMessage());
+            log.warn("Failed to convert metadata to JSON: {}", e.getMessage(), e);
             return "{}";
         }
     }
@@ -407,7 +407,7 @@ public class RefundServiceImpl implements RefundService {
             paymentEventPublisher.publishPaymentStatusUpdated(event);
             log.info("Published PAYMENT_REFUNDED event for refund: {}", refund.getRefundReference());
         } catch (Exception e) {
-            log.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage());
+            log.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage(), e);
         }
     }
 

@@ -12,7 +12,10 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class OtpServiceImpl implements OtpService {
 
     private final StringRedisTemplate redisTemplate;
@@ -31,7 +34,7 @@ public class OtpServiceImpl implements OtpService {
         String otp = String.format("%06d", random.nextInt(999999));
         redisTemplate.opsForValue().set(OTP_PREFIX + paymentId, otp, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
         
-        System.out.println("Generated OTP for payment " + paymentId + ": " + otp);
+        log.info("Generated OTP for payment {}: {}", paymentId, otp);
 
         try {
             UUID userId = (userIdStr != null && !userIdStr.isEmpty()) ? UUID.fromString(userIdStr) : UUID.randomUUID();
@@ -53,7 +56,7 @@ public class OtpServiceImpl implements OtpService {
             
             userEventPublisher.publishUserEvent(event);
         } catch (Exception e) {
-            System.err.println("Failed to publish OTP event: " + e.getMessage());
+            log.error("Failed to publish OTP event: {}", e.getMessage(), e);
         }
 
         return otp;
