@@ -55,13 +55,11 @@ public class PaymentServiceImpl implements PaymentService {
     final private List<PaymentGateway> paymentGateways;
 
 
-    final private InternalStatsClient internalStatsClient;
-
     final private ObjectMapper objectMapper;
     final private com.blubugtech.bakery_payment_service.client.UserClient userClient;
+    final private com.blubugtech.bakery_payment_service.service.PaymentProcessingService paymentProcessingService;
 
-    final private PaymentEventPublisher paymentEventPublisher;
-
+    final private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
     final private com.blubugtech.bakery_payment_service.service.OtpService otpService;
     
     final private com.blubugtech.bakery_payment_service.client.OrderClient orderClient;
@@ -77,19 +75,19 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, InternalStatsClient internalStatsClient, PaymentEventPublisher paymentEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient, com.blubugtech.bakery_payment_service.client.OrderClient orderClient) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient, com.blubugtech.bakery_payment_service.client.OrderClient orderClient, com.blubugtech.bakery_payment_service.service.PaymentProcessingService paymentProcessingService) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionService = paymentTransactionService;
         this.refundService = refundService;
         
         this.objectMapper = objectMapper;
-        this.internalStatsClient = internalStatsClient;
-        this.paymentEventPublisher = paymentEventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.paymentGateways = paymentGateways;
         this.otpService = otpService;
         this.kafkaTemplate = kafkaTemplate;
         this.userClient = userClient;
         this.orderClient = orderClient;
+        this.paymentProcessingService = paymentProcessingService;
     }
 
     // Create payment
@@ -237,10 +235,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment updatedPayment = paymentRepository.save(payment);
 
         // Notify order service of payment status change
-        notifyOrderServiceAsync(updatedPayment);
-
-        // Notify user
-        sendPaymentNotificationAsync(updatedPayment);
+        applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.PaymentStatusUpdatedApplicationEvent(this, updatedPayment));
 
         log.info("Payment status updated successfully: {} from {} to {}",
                    paymentId, oldStatus, request.getStatus());
@@ -281,7 +276,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment cancelledPayment = paymentRepository.save(payment);
 
         // Notify order service
-        notifyOrderServiceAsync(cancelledPayment);
+        applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.PaymentStatusUpdatedApplicationEvent(this, cancelledPayment));
 
         log.info("Payment cancelled successfully: {}", paymentId);
         return PaymentResponse.from(cancelledPayment);
@@ -306,7 +301,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
 
         // Process payment asynchronously
-        processPaymentAsync(savedPayment);
+        paymentProcessingService.processPaymentAsync(savedPayment);
 
         log.info("Payment retry initiated: {}", paymentId);
         return PaymentResponse.from(savedPayment);
@@ -352,112 +347,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Private helper methods
-    @Async
-    protected void processPaymentAsync(Payment payment) {
-        log.info("Processing payment asynchronously: {}", payment.getPaymentReference());
 
-        try {
-            // Update status to processing
-            payment.setStatus(PaymentStatus.PROCESSING);
-            paymentRepository.save(payment);
-
-            // Process through gateway
-            PaymentGatewayResult gatewayResponse = getGatewayForMethod(payment.getPaymentMethod()).processPayment(payment, TransactionType.SALE);
-
-            // Create transaction record
-            PaymentTransaction transaction = new PaymentTransaction(payment,
-                    TransactionType.SALE, payment.getAmount(),
-                    "Payment processing");
-
-            // Update payment based on gateway response
-            if (gatewayResponse.isSuccess()) {
-                payment.setStatus(PaymentStatus.COMPLETED);
-                payment.setCapturedAt(LocalDateTime.now());
-                payment.setGatewayFee(gatewayResponse.getGatewayFee());
-                payment.calculateNetAmount();
-                transaction.setStatus(TransactionStatus.COMPLETED);
-                transaction.setProcessedAt(LocalDateTime.now());
-            } else if (gatewayResponse.isPending()) {
-                payment.setStatus(PaymentStatus.PENDING);
-            } else {
-                payment.setStatus(PaymentStatus.FAILED);
-                payment.setFailedAt(LocalDateTime.now());
-                payment.setFailureReason(gatewayResponse.getGatewayResponse());
-                payment.setFailureCode(gatewayResponse.getFailureCode());
-                transaction.setStatus(TransactionStatus.FAILED);
-                transaction.setFailureReason(gatewayResponse.getGatewayResponse());
-                transaction.setFailureCode(gatewayResponse.getFailureCode());
-            }
-
-            // Update gateway information
-            payment.setGatewayPaymentId(gatewayResponse.getGatewayTransactionId());
-            payment.setGatewayResponse(gatewayResponse.getGatewayResponse());
-            payment.setGatewayRawResponse(gatewayResponse.getRawResponse());
-
-            transaction.setGatewayTransactionId(gatewayResponse.getGatewayTransactionId());
-            transaction.setGatewayResponse(gatewayResponse.getGatewayResponse());
-            transaction.setGatewayRawResponse(gatewayResponse.getRawResponse());
-
-            // Save payment and transaction
-            payment.addTransaction(transaction);
-            paymentRepository.save(payment);
-
-            // Notify order service
-            notifyOrderServiceAsync(payment);
-
-            // Notify user
-            sendPaymentNotificationAsync(payment);
-
-            log.info("Payment processing completed: {} status: {}",
-                       payment.getPaymentReference(), payment.getStatus());
-
-        } catch (Exception e) {
-            log.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage(), e);
-
-            // Update payment as failed
-            payment.setStatus(PaymentStatus.FAILED);
-            payment.setFailedAt(LocalDateTime.now());
-            payment.setFailureReason("Payment processing error: " + e.getMessage());
-            paymentRepository.save(payment);
-
-            // Notify order service
-            notifyOrderServiceAsync(payment);
-
-            // Notify user
-            sendPaymentNotificationAsync(payment);
-        }
-    }
-
-    @Async
-    protected void notifyOrderServiceAsync(Payment payment) {
-        try {
-            com.blubugtech.bakery_payment_service.client.UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
-            org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder().payload(
-                org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
-                    .paymentId(payment.getId())
-                    .orderId(payment.getOrderId())
-                    .userId(payment.getUserId())
-                    .customerEmail(userDto != null ? userDto.getEmail() : null)
-                    .customerPhone(userDto != null ? userDto.getPhone() : null)
-                    .status(payment.getStatus().name())
-                    .amount(payment.getAmount())
-                    .refundAmount(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? payment.getAmount() : null)
-                    .refundReason(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? (payment.getFailureReason() != null && !payment.getFailureReason().trim().isEmpty() ? payment.getFailureReason() : "Refund processed by Admin") : null)
-                    .timestamp(LocalDateTime.now())
-                    .build()
-            ).build();
-            paymentEventPublisher.publishPaymentStatusUpdated(event);
-            log.debug("Payment status event published for payment: {}", payment.getPaymentReference());
-        } catch (Exception e) {
-            log.error("Failed to publish payment event for {}: {}",
-                        payment.getPaymentReference(), e.getMessage(), e);
-        }
-    }
-
-    @Async
-    protected void sendPaymentNotificationAsync(Payment payment) {
-        // Notification handled asynchronously via Kafka PaymentEvent by NotificationService
-    }
 
     private void validatePaymentRequest(PaymentRequest request) {
         // Validate order and amount against Order Service
@@ -559,13 +449,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    private PaymentGateway getGatewayForMethod(com.blubugtech.bakery_payment_service.enums.PaymentMethod method) {
-        com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider provider = method.getDefaultProvider();
-        return paymentGateways.stream()
-                .filter(g -> g.getProviderType() == provider)
-                .findFirst()
-                .orElseThrow(() -> new PaymentServiceException("No gateway available for provider: " + provider));
-    }
+
 
     public void sendOtp(UUID paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -584,7 +468,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // OTP valid, process payment
-        processPaymentAsync(payment);
+        paymentProcessingService.processPaymentAsync(payment);
         return PaymentResponse.from(payment);
     }
 }

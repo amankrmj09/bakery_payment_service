@@ -19,7 +19,7 @@ import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayR
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import com.blubugtech.bakery_payment_service.exception.gateway.PaymentGatewayException;
-import com.blubugtech.bakery_payment_service.integration.kafka.producer.PaymentEventPublisher;
+
 import com.blubugtech.bakery_payment_service.client.UserClient;
 import org.blubakery.common.messaging.event.PaymentEvent;
 import org.blubakery.common.messaging.contract.messaging.PaymentPayload;
@@ -53,17 +53,16 @@ public class RefundServiceImpl implements RefundService {
 
     final private ObjectMapper objectMapper;
     
-    final private PaymentEventPublisher paymentEventPublisher;
-    
+    final private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
     final private UserClient userClient;
 
-    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, PaymentEventPublisher paymentEventPublisher, UserClient userClient) {
+    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, UserClient userClient) {
         this.refundRepository = refundRepository;
         this.paymentGateways = paymentGateways;
         this.paymentRepository = paymentRepository;
         
         this.objectMapper = objectMapper;
-        this.paymentEventPublisher = paymentEventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.userClient = userClient;
     }
 
@@ -381,31 +380,8 @@ public class RefundServiceImpl implements RefundService {
     
     private void publishRefundEvent(Refund refund) {
         try {
-            Payment payment = refund.getPayment();
-            UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
-            
-            PaymentPayload payload = PaymentPayload.builder()
-                .paymentId(payment.getId())
-                .orderId(payment.getOrderId())
-                .userId(payment.getUserId())
-                .customerEmail(userDto != null ? userDto.getEmail() : null)
-                .customerPhone(userDto != null ? userDto.getPhone() : null)
-                .status("REFUNDED")
-                .amount(payment.getAmount())
-                .refundAmount(refund.getAmount())
-                .refundReason(refund.getReason())
-                .timestamp(LocalDateTime.now())
-                .build();
-                
-            PaymentEvent event = PaymentEvent.builder()
-                .eventId(UUID.randomUUID().toString())
-                .eventType("PAYMENT_REFUNDED")
-                .timestamp(java.time.Instant.now())
-                .payload(payload)
-                .build();
-                
-            paymentEventPublisher.publishPaymentStatusUpdated(event);
-            log.info("Published PAYMENT_REFUNDED event for refund: {}", refund.getRefundReference());
+            applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.RefundProcessedApplicationEvent(this, refund));
+            log.info("Published PAYMENT_REFUNDED application event for refund: {}", refund.getRefundReference());
         } catch (Exception e) {
             log.error("Failed to publish refund event for refund {}: {}", refund.getRefundReference(), e.getMessage(), e);
         }
