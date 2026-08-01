@@ -103,6 +103,7 @@ dependencies {
 	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("io.projectreactor:reactor-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testRuntimeOnly("com.h2database:h2")
 	// testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	// testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
 	// testImplementation("org.testcontainers:junit-jupiter")
