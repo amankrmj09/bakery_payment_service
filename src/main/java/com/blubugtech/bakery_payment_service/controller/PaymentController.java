@@ -62,32 +62,6 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
     }
 
-    // Get all payments with pagination
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<PaymentResponse>> getAllPayments(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir,
-            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
-
-        log.info("Get all payments request received (page: {}, size: {})", page, size);
-
-        // Only admins can view all payments
-        if (!"ADMIN".equals(userRole)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        Page<PaymentResponse> payments = paymentService.getAllPayments(pageable);
-
-        log.info("Retrieved {} payments (page {} of {})", payments.getContent().size(),
-                   page + 1, payments.getTotalPages());
-        return ResponseEntity.ok(payments);
-    }
 
     // Get payment by ID
     @GetMapping("/{paymentId}")
@@ -169,46 +143,6 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    // Get payments by status
-    @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentResponse>> getPaymentsByStatus(
-            @PathVariable PaymentStatus status,
-            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
-
-        log.info("Get payments by status request received: {}", status);
-
-        // Only admins can view payments by status
-        if (!"ADMIN".equals(userRole)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        List<PaymentResponse> payments = paymentService.getPaymentsByStatus(status);
-
-        log.info("Retrieved {} payments with status {}", payments.size(), status);
-        return ResponseEntity.ok(payments);
-    }
-
-    // Update payment status
-    @PatchMapping("/{paymentId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PaymentResponse> updatePaymentStatus(
-            @PathVariable UUID paymentId,
-            @Valid @RequestBody PaymentStatusUpdateRequest request,
-            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
-
-        log.info("Update payment status request received: {} to {}", paymentId, request.getStatus());
-
-        // Only admins can update payment status
-        if (!"ADMIN".equals(userRole)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        PaymentResponse payment = paymentService.updatePaymentStatus(paymentId, request);
-
-        log.info("Payment status updated successfully: {}", paymentId);
-        return ResponseEntity.ok(payment);
-    }
 
     // Cancel payment
     @PostMapping("/{paymentId}/cancel")
@@ -300,33 +234,5 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
-    // Get payment statistics
-    @GetMapping("/statistics")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> getPaymentStatistics(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
-
-        log.info("Get payment statistics request received");
-
-        // Only admins can view statistics
-        if (!"ADMIN".equals(userRole)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        // Default to last 30 days if no dates provided
-        if (startDate == null) {
-            startDate = LocalDateTime.now().minusDays(30);
-        }
-        if (endDate == null) {
-            endDate = LocalDateTime.now();
-        }
-
-        Map<String, Object> statistics = paymentService.getPaymentStatistics(startDate, endDate);
-
-        log.info("Payment statistics retrieved");
-        return ResponseEntity.ok(statistics);
-    }
 
 }
