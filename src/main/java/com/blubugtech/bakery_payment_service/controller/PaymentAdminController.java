@@ -1,23 +1,23 @@
 package com.blubugtech.bakery_payment_service.controller;
 
-import lombok.extern.slf4j.Slf4j;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentResponse;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentStatusUpdateRequest;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-import com.blubugtech.bakery_payment_service.dto.payment.*;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -35,7 +35,7 @@ public class PaymentAdminController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<PaymentResponse>> getAllPayments(
+    public ResponseEntity<PagedModel<PaymentResponse>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -49,21 +49,30 @@ public class PaymentAdminController {
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<PaymentResponse> payments = paymentService.getAllPayments(pageable);
+
+        PagedModel<PaymentResponse> payments = paymentService.getAllPayments(pageable);
         return ResponseEntity.ok(payments);
     }
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentResponse>> getPaymentsByStatus(
+    public ResponseEntity<PagedModel<PaymentResponse>> getPaymentsByStatus(
             @PathVariable PaymentStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get payments by status request received: {}", status);
         if (!"ADMIN".equals(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        List<PaymentResponse> payments = paymentService.getPaymentsByStatus(status);
+
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        PagedModel<PaymentResponse> payments = paymentService.getPaymentsByStatus(status, pageable);
         return ResponseEntity.ok(payments);
     }
 

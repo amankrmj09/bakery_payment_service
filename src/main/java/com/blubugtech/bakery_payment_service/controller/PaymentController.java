@@ -1,33 +1,18 @@
 package com.blubugtech.bakery_payment_service.controller;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.dto.payment.*;
-import com.blubugtech.bakery_payment_service.dto.refund.*;
-import com.blubugtech.bakery_payment_service.dto.transaction.*;
-import com.blubugtech.bakery_payment_service.entity.Payment;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentRequest;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentResponse;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -125,8 +110,12 @@ public class PaymentController {
 
     // Get payments by user ID
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PaymentResponse>> getPaymentsByUserId(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentResponse>> getPaymentsByUserId(
             @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Id", required = false) UUID requestUserId,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
@@ -137,9 +126,12 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<PaymentResponse> payments = paymentService.getPaymentsByUserId(userId);
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} payments for user", payments.size());
+        org.springframework.data.web.PagedModel<PaymentResponse> payments = paymentService.getPaymentsByUserId(userId, pageable);
+
+        log.info("Retrieved {} payments for user", payments.getContent().size());
         return ResponseEntity.ok(payments);
     }
 

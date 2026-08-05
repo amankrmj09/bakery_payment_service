@@ -1,8 +1,6 @@
 package com.blubugtech.bakery_payment_service.dto.payment;
 
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.entity.Payment;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -25,7 +23,8 @@ public class PaymentStatusUpdateRequest {
     private String gatewayResponse;
 
     // Constructors
-    public PaymentStatusUpdateRequest() {}
+    public PaymentStatusUpdateRequest() {
+    }
 
     public PaymentStatusUpdateRequest(PaymentStatus status, String reason) {
         this.status = status;

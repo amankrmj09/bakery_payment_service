@@ -1,8 +1,7 @@
 package com.blubugtech.bakery_payment_service.repository;
 
-import com.blubugtech.bakery_payment_service.enums.RefundStatus;
-
 import com.blubugtech.bakery_payment_service.entity.Refund;
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,7 +28,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     Optional<Refund> findByGatewayRefundId(String gatewayRefundId);
 
     // Find refunds by payment ID
-    List<Refund> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
+    Page<Refund> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId, Pageable pageable);
 
     // Find refunds by status
     List<Refund> findByStatusOrderByCreatedAtDesc(RefundStatus status);
@@ -38,7 +37,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     Page<Refund> findByStatus(RefundStatus status, Pageable pageable);
 
     // Find refunds by requested by user
-    List<Refund> findByRequestedByOrderByCreatedAtDesc(UUID requestedBy);
+    Page<Refund> findByRequestedByOrderByCreatedAtDesc(UUID requestedBy, Pageable pageable);
 
     // Find refunds by approved by user
     List<Refund> findByApprovedByOrderByCreatedAtDesc(UUID approvedBy);
@@ -54,7 +53,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
     // Find pending refunds
     @Query("SELECT r FROM Refund r WHERE r.status = 'PENDING' ORDER BY r.createdAt ASC")
-    List<Refund> findPendingRefunds();
+    Page<Refund> findPendingRefunds(Pageable pageable);
 
     // Find pending refunds older than specific time
     @Query("SELECT r FROM Refund r WHERE r.status = 'PENDING' AND r.createdAt <= :cutoffTime ORDER BY r.createdAt ASC")
@@ -66,11 +65,11 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
     // Find failed refunds
     @Query("SELECT r FROM Refund r WHERE r.status = 'FAILED' ORDER BY r.createdAt DESC")
-    List<Refund> findFailedRefunds();
+    Page<Refund> findFailedRefunds(Pageable pageable);
 
     // Find completed refunds
     @Query("SELECT r FROM Refund r WHERE r.status = 'COMPLETED' ORDER BY r.completedAt DESC")
-    List<Refund> findCompletedRefunds();
+    Page<Refund> findCompletedRefunds(Pageable pageable);
 
     // Find refunds by payment and status
     List<Refund> findByPaymentIdAndStatusOrderByCreatedAtDesc(UUID paymentId, RefundStatus status);
@@ -97,7 +96,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     // Get total refund amount by date range
     @Query("SELECT COALESCE(SUM(r.amount), 0) FROM Refund r WHERE r.createdAt BETWEEN :startDate AND :endDate")
     BigDecimal getTotalRefundAmountByDateRange(@Param("startDate") LocalDateTime startDate,
-                                              @Param("endDate") LocalDateTime endDate);
+                                               @Param("endDate") LocalDateTime endDate);
 
     // Get total refund amount for payment
     @Query("SELECT COALESCE(SUM(r.amount), 0) FROM Refund r WHERE r.payment.id = :paymentId AND r.status = 'COMPLETED'")
@@ -105,83 +104,83 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
     // Get refund statistics by status
     @Query("SELECT r.status as status, " +
-           "COUNT(r) as refundCount, " +
-           "SUM(r.amount) as totalAmount, " +
-           "AVG(r.amount) as averageAmount " +
-           "FROM Refund r " +
-           "WHERE r.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY r.status")
+            "COUNT(r) as refundCount, " +
+            "SUM(r.amount) as totalAmount, " +
+            "AVG(r.amount) as averageAmount " +
+            "FROM Refund r " +
+            "WHERE r.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY r.status")
     List<Object[]> getRefundStatisticsByStatus(@Param("startDate") LocalDateTime startDate,
-                                              @Param("endDate") LocalDateTime endDate);
+                                               @Param("endDate") LocalDateTime endDate);
 
     // Get daily refund statistics
     @Query(value = "SELECT DATE(r.created_at) as refund_date, " +
-                   "COUNT(r) as refund_count, " +
-                   "SUM(r.amount) as total_amount, " +
-                   "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) as successful_refunds, " +
-                   "COUNT(CASE WHEN r.status = 'FAILED' THEN 1 END) as failed_refunds " +
-                   "FROM refunds r " +
-                   "WHERE r.created_at BETWEEN :startDate AND :endDate " +
-                   "GROUP BY DATE(r.created_at) " +
-                   "ORDER BY DATE(r.created_at) DESC", nativeQuery = true)
+            "COUNT(r) as refund_count, " +
+            "SUM(r.amount) as total_amount, " +
+            "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) as successful_refunds, " +
+            "COUNT(CASE WHEN r.status = 'FAILED' THEN 1 END) as failed_refunds " +
+            "FROM refunds r " +
+            "WHERE r.created_at BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE(r.created_at) " +
+            "ORDER BY DATE(r.created_at) DESC", nativeQuery = true)
     List<Object[]> getDailyRefundStatistics(@Param("startDate") LocalDateTime startDate,
-                                           @Param("endDate") LocalDateTime endDate);
+                                            @Param("endDate") LocalDateTime endDate);
 
     // Get refund success rate
     @Query("SELECT " +
-           "COUNT(r) as totalRefunds, " +
-           "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) as successfulRefunds, " +
-           "COUNT(CASE WHEN r.status = 'FAILED' THEN 1 END) as failedRefunds, " +
-           "COUNT(CASE WHEN r.status = 'PENDING' THEN 1 END) as pendingRefunds " +
-           "FROM Refund r " +
-           "WHERE r.createdAt BETWEEN :startDate AND :endDate")
+            "COUNT(r) as totalRefunds, " +
+            "COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) as successfulRefunds, " +
+            "COUNT(CASE WHEN r.status = 'FAILED' THEN 1 END) as failedRefunds, " +
+            "COUNT(CASE WHEN r.status = 'PENDING' THEN 1 END) as pendingRefunds " +
+            "FROM Refund r " +
+            "WHERE r.createdAt BETWEEN :startDate AND :endDate")
     Object[] getRefundSuccessRate(@Param("startDate") LocalDateTime startDate,
                                   @Param("endDate") LocalDateTime endDate);
 
     // Get average refund processing time
     @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (r.completed_at - r.created_at))/60) " +
-                   "FROM refunds r " +
-                   "WHERE r.status = 'COMPLETED' " +
-                   "AND r.completed_at IS NOT NULL " +
-                   "AND r.created_at BETWEEN :startDate AND :endDate", nativeQuery = true)
+            "FROM refunds r " +
+            "WHERE r.status = 'COMPLETED' " +
+            "AND r.completed_at IS NOT NULL " +
+            "AND r.created_at BETWEEN :startDate AND :endDate", nativeQuery = true)
     Double getAverageRefundProcessingTimeInMinutes(@Param("startDate") LocalDateTime startDate,
-                                                  @Param("endDate") LocalDateTime endDate);
+                                                   @Param("endDate") LocalDateTime endDate);
 
     // Get top users by refund amount
     @Query("SELECT r.requestedBy, " +
-           "COUNT(r) as refundCount, " +
-           "SUM(r.amount) as totalRefundAmount " +
-           "FROM Refund r " +
-           "WHERE r.createdAt BETWEEN :startDate AND :endDate " +
-           "AND r.status = 'COMPLETED' " +
-           "GROUP BY r.requestedBy " +
-           "ORDER BY SUM(r.amount) DESC")
+            "COUNT(r) as refundCount, " +
+            "SUM(r.amount) as totalRefundAmount " +
+            "FROM Refund r " +
+            "WHERE r.createdAt BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'COMPLETED' " +
+            "GROUP BY r.requestedBy " +
+            "ORDER BY SUM(r.amount) DESC")
     List<Object[]> getTopUsersByRefundAmount(@Param("startDate") LocalDateTime startDate,
-                                            @Param("endDate") LocalDateTime endDate,
-                                            Pageable pageable);
+                                             @Param("endDate") LocalDateTime endDate,
+                                             Pageable pageable);
 
     // Search refunds by reason or notes
     @Query("SELECT r FROM Refund r " +
-           "WHERE LOWER(r.reason) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-           "OR LOWER(r.notes) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-           "ORDER BY r.createdAt DESC")
-    List<Refund> searchRefundsByText(@Param("searchTerm") String searchTerm);
+            "WHERE LOWER(r.reason) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(r.notes) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "ORDER BY r.createdAt DESC")
+    Page<Refund> searchRefundsByText(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     // Advanced search with multiple filters
     @Query("SELECT r FROM Refund r " +
-           "WHERE (:status IS NULL OR r.status = :status) " +
-           "AND (:requestedBy IS NULL OR r.requestedBy = :requestedBy) " +
-           "AND (:approvedBy IS NULL OR r.approvedBy = :approvedBy) " +
-           "AND (:minAmount IS NULL OR r.amount >= :minAmount) " +
-           "AND (:maxAmount IS NULL OR r.amount <= :maxAmount) " +
-           "AND (:startDate IS NULL OR r.createdAt >= :startDate) " +
-           "AND (:endDate IS NULL OR r.createdAt <= :endDate) " +
-           "ORDER BY r.createdAt DESC")
+            "WHERE (:status IS NULL OR r.status = :status) " +
+            "AND (:requestedBy IS NULL OR r.requestedBy = :requestedBy) " +
+            "AND (:approvedBy IS NULL OR r.approvedBy = :approvedBy) " +
+            "AND (:minAmount IS NULL OR r.amount >= :minAmount) " +
+            "AND (:maxAmount IS NULL OR r.amount <= :maxAmount) " +
+            "AND (:startDate IS NULL OR r.createdAt >= :startDate) " +
+            "AND (:endDate IS NULL OR r.createdAt <= :endDate) " +
+            "ORDER BY r.createdAt DESC")
     List<Refund> findRefundsWithFilters(@Param("status") RefundStatus status,
-                                       @Param("requestedBy") UUID requestedBy,
-                                       @Param("approvedBy") UUID approvedBy,
-                                       @Param("minAmount") BigDecimal minAmount,
-                                       @Param("maxAmount") BigDecimal maxAmount,
-                                       @Param("startDate") LocalDateTime startDate,
-                                       @Param("endDate") LocalDateTime endDate);
+                                        @Param("requestedBy") UUID requestedBy,
+                                        @Param("approvedBy") UUID approvedBy,
+                                        @Param("minAmount") BigDecimal minAmount,
+                                        @Param("maxAmount") BigDecimal maxAmount,
+                                        @Param("startDate") LocalDateTime startDate,
+                                        @Param("endDate") LocalDateTime endDate);
 }

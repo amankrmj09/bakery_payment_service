@@ -1,7 +1,10 @@
 package com.blubugtech.bakery_payment_service.entity;
 
+import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
+import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,18 +12,16 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import com.blubugtech.bakery_payment_service.enums.TransactionType;
-import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "payment_transactions", indexes = {
-    @Index(name = "idx_transaction_payment", columnList = "payment_id"),
-    @Index(name = "idx_transaction_type", columnList = "transaction_type"),
-    @Index(name = "idx_transaction_status", columnList = "status"),
-    @Index(name = "idx_transaction_gateway", columnList = "gateway_transaction_id"),
-    @Index(name = "idx_transaction_date", columnList = "created_at")
+        @Index(name = "idx_transaction_payment", columnList = "payment_id"),
+        @Index(name = "idx_transaction_type", columnList = "transaction_type"),
+        @Index(name = "idx_transaction_status", columnList = "status"),
+        @Index(name = "idx_transaction_gateway", columnList = "gateway_transaction_id"),
+        @Index(name = "idx_transaction_date", columnList = "created_at")
 })
 public class PaymentTransaction {
 
@@ -79,7 +80,8 @@ public class PaymentTransaction {
     private String metadata;
 
     // Constructors
-    public PaymentTransaction() {}
+    public PaymentTransaction() {
+    }
 
     public PaymentTransaction(Payment payment, TransactionType transactionType, BigDecimal amount, String description) {
         this.payment = payment;

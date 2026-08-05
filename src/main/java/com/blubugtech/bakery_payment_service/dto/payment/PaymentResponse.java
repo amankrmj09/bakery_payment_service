@@ -1,14 +1,14 @@
 package com.blubugtech.bakery_payment_service.dto.payment;
 
+import com.blubugtech.bakery_payment_service.dto.refund.RefundResponse;
+import com.blubugtech.bakery_payment_service.dto.transaction.PaymentTransactionResponse;
+import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.entity.Payment;
 import lombok.Getter;
-import com.blubugtech.bakery_payment_service.dto.transaction.PaymentTransactionResponse;
-import com.blubugtech.bakery_payment_service.dto.refund.RefundResponse;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
@@ -68,7 +66,8 @@ public class PaymentResponse {
     private Map<String, Object> metadata;
 
     // Constructors
-    public PaymentResponse() {}
+    public PaymentResponse() {
+    }
 
     // Static factory method
     public static PaymentResponse from(Payment payment) {

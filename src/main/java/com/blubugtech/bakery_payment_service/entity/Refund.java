@@ -1,7 +1,10 @@
 package com.blubugtech.bakery_payment_service.entity;
 
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,17 +13,16 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "refunds", indexes = {
-    @Index(name = "idx_refund_payment", columnList = "payment_id"),
-    @Index(name = "idx_refund_reference", columnList = "refund_reference"),
-    @Index(name = "idx_refund_status", columnList = "status"),
-    @Index(name = "idx_refund_date", columnList = "created_at"),
-    @Index(name = "idx_refund_gateway", columnList = "gateway_refund_id")
+        @Index(name = "idx_refund_payment", columnList = "payment_id"),
+        @Index(name = "idx_refund_reference", columnList = "refund_reference"),
+        @Index(name = "idx_refund_status", columnList = "status"),
+        @Index(name = "idx_refund_date", columnList = "created_at"),
+        @Index(name = "idx_refund_gateway", columnList = "gateway_refund_id")
 })
 public class Refund {
 
@@ -99,7 +101,8 @@ public class Refund {
     private String metadata;
 
     // Constructors
-    public Refund() {}
+    public Refund() {
+    }
 
     public Refund(Payment payment, BigDecimal amount, String reason, UUID requestedBy) {
         this.payment = payment;

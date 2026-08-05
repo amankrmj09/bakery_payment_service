@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 
 @Component
@@ -28,18 +29,18 @@ public class PaymentEventListener {
         try {
             UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
             org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder().payload(
-                org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
-                    .paymentId(payment.getId())
-                    .orderId(payment.getOrderId())
-                    .userId(payment.getUserId())
-                    .customerEmail(userDto != null ? userDto.getEmail() : null)
-                    .customerPhone(userDto != null ? userDto.getPhone() : null)
-                    .status(payment.getStatus().name())
-                    .amount(payment.getAmount())
-                    .refundAmount(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? payment.getAmount() : null)
-                    .refundReason(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? (payment.getFailureReason() != null && !payment.getFailureReason().trim().isEmpty() ? payment.getFailureReason() : "Refund processed by Admin") : null)
-                    .timestamp(LocalDateTime.now())
-                    .build()
+                    org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
+                            .paymentId(payment.getId())
+                            .orderId(payment.getOrderId())
+                            .userId(payment.getUserId())
+                            .customerEmail(userDto != null ? userDto.getEmail() : null)
+                            .customerPhone(userDto != null ? userDto.getPhone() : null)
+                            .status(payment.getStatus().name())
+                            .amount(payment.getAmount())
+                            .refundAmount(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? payment.getAmount() : null)
+                            .refundReason(payment.getStatus() == com.blubugtech.bakery_payment_service.enums.PaymentStatus.REFUNDED ? (payment.getFailureReason() != null && !payment.getFailureReason().trim().isEmpty() ? payment.getFailureReason() : "Refund processed by Admin") : null)
+                            .timestamp(LocalDateTime.now())
+                            .build()
             ).build();
             paymentEventPublisher.publishPaymentStatusUpdated(event);
             log.debug("Payment status event published via listener for payment: {}", payment.getPaymentReference());
@@ -56,23 +57,23 @@ public class PaymentEventListener {
         try {
             UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
             org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder()
-                .eventId(java.util.UUID.randomUUID().toString())
-                .eventType("PAYMENT_REFUNDED")
-                .timestamp(java.time.Instant.now())
-                .payload(
-                    org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
-                        .paymentId(payment.getId())
-                        .orderId(payment.getOrderId())
-                        .userId(payment.getUserId())
-                        .customerEmail(userDto != null ? userDto.getEmail() : null)
-                        .customerPhone(userDto != null ? userDto.getPhone() : null)
-                        .status("REFUNDED")
-                        .amount(payment.getAmount())
-                        .refundAmount(refund.getAmount())
-                        .refundReason(refund.getReason())
-                        .timestamp(LocalDateTime.now())
-                        .build()
-                ).build();
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .eventType("PAYMENT_REFUNDED")
+                    .timestamp(java.time.Instant.now())
+                    .payload(
+                            org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
+                                    .paymentId(payment.getId())
+                                    .orderId(payment.getOrderId())
+                                    .userId(payment.getUserId())
+                                    .customerEmail(userDto != null ? userDto.getEmail() : null)
+                                    .customerPhone(userDto != null ? userDto.getPhone() : null)
+                                    .status("REFUNDED")
+                                    .amount(payment.getAmount())
+                                    .refundAmount(refund.getAmount())
+                                    .refundReason(refund.getReason())
+                                    .timestamp(LocalDateTime.now())
+                                    .build()
+                    ).build();
             paymentEventPublisher.publishPaymentStatusUpdated(event);
             log.info("Published PAYMENT_REFUNDED event via listener for refund: {}", refund.getRefundReference());
         } catch (Exception e) {

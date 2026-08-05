@@ -1,35 +1,31 @@
 package com.blubugtech.bakery_payment_service.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
-import com.blubugtech.bakery_payment_service.enums.TransactionType;
+import com.blubugtech.bakery_payment_service.client.OrderClient;
+import com.blubugtech.bakery_payment_service.client.UserClient;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentRequest;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentResponse;
+import com.blubugtech.bakery_payment_service.dto.payment.PaymentStatusUpdateRequest;
+import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.integration.kafka.producer.PaymentEventPublisher;
-import com.blubugtech.bakery_payment_service.service.PaymentService;
-
-import com.blubugtech.bakery_payment_service.service.PaymentTransactionService;
-import com.blubugtech.bakery_payment_service.service.RefundService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.blubugtech.bakery_payment_service.client.statistics.InternalStatsClient;
-import com.blubugtech.bakery_payment_service.dto.payment.*;
-import com.blubugtech.bakery_payment_service.dto.refund.*;
-import com.blubugtech.bakery_payment_service.dto.transaction.*;
-import com.blubugtech.bakery_payment_service.entity.Payment;
-import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
-import com.blubugtech.bakery_payment_service.exception.payment.*;
-import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
-import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
+import com.blubugtech.bakery_payment_service.exception.payment.InvalidPaymentAmountException;
+import com.blubugtech.bakery_payment_service.exception.payment.InvalidPaymentStatusException;
+import com.blubugtech.bakery_payment_service.exception.payment.PaymentNotFoundException;
+import com.blubugtech.bakery_payment_service.exception.payment.PaymentServiceException;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
-import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
+import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
+import com.blubugtech.bakery_payment_service.service.*;
+import com.blubugtech.bakery_payment_service.mapper.PaymentMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
-import com.blubugtech.bakery_payment_service.exception.*;
+import org.springframework.data.web.PagedModel;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,11 +35,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     final private PaymentRepository paymentRepository;
@@ -56,15 +52,17 @@ public class PaymentServiceImpl implements PaymentService {
 
 
     final private ObjectMapper objectMapper;
-    final private com.blubugtech.bakery_payment_service.client.UserClient userClient;
-    final private com.blubugtech.bakery_payment_service.service.PaymentProcessingService paymentProcessingService;
+    final private UserClient userClient;
+    final private PaymentProcessingService paymentProcessingService;
 
-    final private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
-    final private com.blubugtech.bakery_payment_service.service.OtpService otpService;
+    final private ApplicationEventPublisher applicationEventPublisher;
+    final private OtpService otpService;
+
+    final private OrderClient orderClient;
+
+    final private KafkaTemplate<String, Object> kafkaTemplate;
     
-    final private com.blubugtech.bakery_payment_service.client.OrderClient orderClient;
-
-    final private org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
+    final private PaymentMapper paymentMapper;
 
     @Value("${payment.limits.min-amount:0.50}")
     private BigDecimal minPaymentAmount;
@@ -74,21 +72,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Value("${payment.limits.daily-limit:50000.00}")
     private BigDecimal dailyPaymentLimit;
-
-    public PaymentServiceImpl(PaymentRepository paymentRepository, PaymentTransactionService paymentTransactionService, RefundService refundService, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, com.blubugtech.bakery_payment_service.service.OtpService otpService, org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate, com.blubugtech.bakery_payment_service.client.UserClient userClient, com.blubugtech.bakery_payment_service.client.OrderClient orderClient, com.blubugtech.bakery_payment_service.service.PaymentProcessingService paymentProcessingService) {
-        this.paymentRepository = paymentRepository;
-        this.paymentTransactionService = paymentTransactionService;
-        this.refundService = refundService;
-        
-        this.objectMapper = objectMapper;
-        this.applicationEventPublisher = applicationEventPublisher;
-        this.paymentGateways = paymentGateways;
-        this.otpService = otpService;
-        this.kafkaTemplate = kafkaTemplate;
-        this.userClient = userClient;
-        this.orderClient = orderClient;
-        this.paymentProcessingService = paymentProcessingService;
-    }
 
     // Create payment
     public PaymentResponse createPayment(PaymentRequest request) {
@@ -108,8 +91,8 @@ public class PaymentServiceImpl implements PaymentService {
 
             // Create payment entity
             Payment payment = new Payment(request.getOrderId(), request.getUserId(),
-                                        request.getPaymentMethod(), request.getAmount(),
-                                        request.getDescription());
+                    request.getPaymentMethod(), request.getAmount(),
+                    request.getDescription());
 
             payment.setPaymentGateway(request.getPaymentGateway());
             payment.setCurrencyCode(request.getCurrencyCode());
@@ -138,7 +121,7 @@ public class PaymentServiceImpl implements PaymentService {
             Payment savedPayment = paymentRepository.save(payment);
 
             log.info("Payment created successfully (PENDING for OTP): {}", savedPayment.getPaymentReference());
-            return PaymentResponse.from(savedPayment);
+            return paymentMapper.toResponse(savedPayment);
 
         } catch (Exception e) {
             log.error("Failed to create payment for order {}: {}", request.getOrderId(), e.getMessage(), e);
@@ -154,7 +137,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with ID: " + paymentId));
 
-        return PaymentResponse.from(payment);
+        return paymentMapper.toResponse(payment);
     }
 
     // Get payment by reference
@@ -165,7 +148,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByPaymentReference(paymentReference)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found with reference: " + paymentReference));
 
-        return PaymentResponse.from(payment);
+        return paymentMapper.toResponse(payment);
     }
 
     // Get payment by order ID
@@ -176,36 +159,37 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found for order: " + orderId));
 
-        return PaymentResponse.from(payment);
+        return paymentMapper.toResponse(payment);
     }
 
     // Get payments by user ID
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentsByUserId(UUID userId) {
+    public PagedModel<PaymentResponse> getPaymentsByUserId(UUID userId, Pageable pageable) {
         log.debug("Fetching payments for user: {}", userId);
 
-        return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(PaymentResponse::from)
-                .collect(Collectors.toList());
+        Page<PaymentResponse> paymentPage = paymentRepository.findByUserId(userId, pageable)
+                .map(paymentMapper::toResponse);
+        return new PagedModel<>(paymentPage);
     }
 
     // Get payments by status
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentsByStatus(PaymentStatus status) {
+    public PagedModel<PaymentResponse> getPaymentsByStatus(PaymentStatus status, Pageable pageable) {
         log.debug("Fetching payments by status: {}", status);
 
-        return paymentRepository.findByStatusOrderByCreatedAtDesc(status).stream()
-                .map(PaymentResponse::from)
-                .collect(Collectors.toList());
+        Page<PaymentResponse> paymentPage = paymentRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
+                .map(paymentMapper::toResponse);
+        return new PagedModel<>(paymentPage);
     }
 
     // Get all payments with pagination
     @Transactional(readOnly = true)
-    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
+    public PagedModel<PaymentResponse> getAllPayments(Pageable pageable) {
         log.debug("Fetching all payments with pagination");
 
-        return paymentRepository.findAll(pageable)
-                .map(PaymentResponse::from);
+        Page<PaymentResponse> paymentPage = paymentRepository.findAll(pageable)
+                .map(paymentMapper::toResponse);
+        return new PagedModel<>(paymentPage);
     }
 
     // Update payment status
@@ -238,9 +222,9 @@ public class PaymentServiceImpl implements PaymentService {
         applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.PaymentStatusUpdatedApplicationEvent(this, updatedPayment));
 
         log.info("Payment status updated successfully: {} from {} to {}",
-                   paymentId, oldStatus, request.getStatus());
+                paymentId, oldStatus, request.getStatus());
 
-        return PaymentResponse.from(updatedPayment);
+        return paymentMapper.toResponse(updatedPayment);
     }
 
     // Cancel payment
@@ -279,7 +263,7 @@ public class PaymentServiceImpl implements PaymentService {
         applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.PaymentStatusUpdatedApplicationEvent(this, cancelledPayment));
 
         log.info("Payment cancelled successfully: {}", paymentId);
-        return PaymentResponse.from(cancelledPayment);
+        return paymentMapper.toResponse(cancelledPayment);
     }
 
     // Retry failed payment
@@ -304,7 +288,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentProcessingService.processPaymentAsync(savedPayment);
 
         log.info("Payment retry initiated: {}", paymentId);
-        return PaymentResponse.from(savedPayment);
+        return paymentMapper.toResponse(savedPayment);
     }
 
     // Get payment statistics
@@ -333,8 +317,8 @@ public class PaymentServiceImpl implements PaymentService {
                     Map.entry("paymentsByGateway", gatewayStats),
                     Map.entry("paymentsByStatus", statusStats),
                     Map.entry("dateRange", Map.ofEntries(
-                        Map.entry("startDate", startDate.toString()),
-                        Map.entry("endDate", endDate.toString())
+                            Map.entry("startDate", startDate.toString()),
+                            Map.entry("endDate", endDate.toString())
                     ))
             );
         } catch (Exception e) {
@@ -353,19 +337,19 @@ public class PaymentServiceImpl implements PaymentService {
         // Validate order and amount against Order Service
         try {
             com.blubugtech.bakery_payment_service.client.OrderClient.OrderDto order = orderClient.getOrderById(request.getOrderId());
-            
+
             if (order == null) {
                 throw new PaymentServiceException("Order not found: " + request.getOrderId());
             }
-            
+
             if ("COMPLETED".equals(order.getPaymentStatus()) || "PAID".equals(order.getPaymentStatus())) {
                 throw new PaymentServiceException("Order is already paid");
             }
-            
+
             if ("CANCELLED".equals(order.getStatus())) {
                 throw new PaymentServiceException("Cannot pay for a cancelled order");
             }
-            
+
             if (request.getAmount().compareTo(order.getTotalAmount()) != 0) {
                 throw new InvalidPaymentAmountException("Payment amount must match the order total: " + order.getTotalAmount());
             }
@@ -400,11 +384,11 @@ public class PaymentServiceImpl implements PaymentService {
     private void validateStatusTransition(PaymentStatus currentStatus, PaymentStatus newStatus) {
         boolean isValidTransition = switch (currentStatus) {
             case PENDING -> newStatus == PaymentStatus.PROCESSING ||
-                          newStatus == PaymentStatus.CANCELLED ||
-                          newStatus == PaymentStatus.COMPLETED;
+                    newStatus == PaymentStatus.CANCELLED ||
+                    newStatus == PaymentStatus.COMPLETED;
             case PROCESSING -> newStatus == PaymentStatus.COMPLETED ||
-                             newStatus == PaymentStatus.FAILED ||
-                             newStatus == PaymentStatus.CANCELLED;
+                    newStatus == PaymentStatus.FAILED ||
+                    newStatus == PaymentStatus.CANCELLED;
             case COMPLETED -> newStatus == PaymentStatus.REFUNDED;
             case FAILED -> newStatus == PaymentStatus.PROCESSING; // For retries
             case CANCELLED, REFUNDED -> false; // Terminal states
@@ -416,7 +400,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void handleStatusTransition(Payment payment, PaymentStatus oldStatus,
-                                      PaymentStatus newStatus, String reason) {
+                                        PaymentStatus newStatus, String reason) {
         LocalDateTime now = LocalDateTime.now();
 
         switch (newStatus) {
@@ -450,7 +434,6 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
 
-
     public void sendOtp(UUID paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
@@ -469,6 +452,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         // OTP valid, process payment
         paymentProcessingService.processPaymentAsync(payment);
-        return PaymentResponse.from(payment);
+        return paymentMapper.toResponse(payment);
     }
 }

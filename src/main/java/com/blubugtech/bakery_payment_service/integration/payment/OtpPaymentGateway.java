@@ -1,9 +1,9 @@
 package com.blubugtech.bakery_payment_service.integration.payment;
 
-import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.entity.Refund;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
+import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -44,23 +44,23 @@ public class OtpPaymentGateway implements PaymentGateway {
     private String generateTransactionId() {
         return "OTP-GW-" + System.currentTimeMillis();
     }
-    
+
     private String generatePendingResponse(Payment payment, TransactionType transactionType) {
         return String.format(
-            "{\"status\":\"pending_otp\",\"transaction_type\":\"%s\",\"amount\":\"%s\",\"currency\":\"%s\",\"timestamp\":\"%s\"}",
-            transactionType.name().toLowerCase(),
-            payment.getAmount().toString(),
-            payment.getCurrencyCode(),
-            LocalDateTime.now().toString()
+                "{\"status\":\"pending_otp\",\"transaction_type\":\"%s\",\"amount\":\"%s\",\"currency\":\"%s\",\"timestamp\":\"%s\"}",
+                transactionType.name().toLowerCase(),
+                payment.getAmount().toString(),
+                payment.getCurrencyCode(),
+                LocalDateTime.now()
         );
     }
 
     private String generateRefundSuccessResponse(Refund refund) {
         return String.format(
-            "{\"status\":\"success\",\"refund_amount\":\"%s\",\"currency\":\"%s\",\"timestamp\":\"%s\"}",
-            refund.getAmount().toString(),
-            refund.getCurrencyCode(),
-            LocalDateTime.now().toString()
+                "{\"status\":\"success\",\"refund_amount\":\"%s\",\"currency\":\"%s\",\"timestamp\":\"%s\"}",
+                refund.getAmount().toString(),
+                refund.getCurrencyCode(),
+                LocalDateTime.now()
         );
     }
 }

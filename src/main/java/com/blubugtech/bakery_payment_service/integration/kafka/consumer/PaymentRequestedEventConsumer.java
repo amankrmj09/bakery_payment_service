@@ -1,9 +1,9 @@
 package com.blubugtech.bakery_payment_service.integration.kafka.consumer;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_payment_service.dto.payment.PaymentRequest;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.blubakery.common.messaging.constants.KafkaTopics;
 import org.blubakery.common.messaging.event.PaymentRequestedEvent;
 import org.springframework.kafka.annotation.KafkaListener;

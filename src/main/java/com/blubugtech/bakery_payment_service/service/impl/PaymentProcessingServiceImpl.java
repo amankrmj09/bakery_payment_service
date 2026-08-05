@@ -1,19 +1,19 @@
 package com.blubugtech.bakery_payment_service.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
-import com.blubugtech.bakery_payment_service.enums.TransactionType;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-import com.blubugtech.bakery_payment_service.service.PaymentProcessingService;
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
-import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
-import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
+import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
+import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
+import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
+import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
+import com.blubugtech.bakery_payment_service.service.PaymentProcessingService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,7 +88,7 @@ public class PaymentProcessingServiceImpl implements PaymentProcessingService {
             applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.PaymentStatusUpdatedApplicationEvent(this, payment));
 
             log.info("Payment processing completed: {} status: {}",
-                       payment.getPaymentReference(), payment.getStatus());
+                    payment.getPaymentReference(), payment.getStatus());
 
         } catch (Exception e) {
             log.error("Payment processing failed: {} - {}", payment.getPaymentReference(), e.getMessage(), e);

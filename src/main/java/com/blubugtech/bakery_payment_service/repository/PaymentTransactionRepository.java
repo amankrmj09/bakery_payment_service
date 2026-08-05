@@ -1,9 +1,8 @@
 package com.blubugtech.bakery_payment_service.repository;
 
+import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
 import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
-
-import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,18 +13,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, UUID> {
 
     // Find transactions by payment ID
-    List<PaymentTransaction> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
+    Page<PaymentTransaction> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId, Pageable pageable);
 
     // Find transactions by transaction type
-    List<PaymentTransaction> findByTransactionTypeOrderByCreatedAtDesc(TransactionType transactionType);
+    Page<PaymentTransaction> findByTransactionTypeOrderByCreatedAtDesc(TransactionType transactionType, Pageable pageable);
 
     // Find transactions by status
-    List<PaymentTransaction> findByStatusOrderByCreatedAtDesc(TransactionStatus status);
+    Page<PaymentTransaction> findByStatusOrderByCreatedAtDesc(TransactionStatus status, Pageable pageable);
 
     // Find transaction by gateway transaction ID
     Optional<PaymentTransaction> findByGatewayTransactionId(String gatewayTransactionId);
@@ -43,11 +44,11 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     // Find failed transactions
     @Query("SELECT pt FROM PaymentTransaction pt WHERE pt.status = 'FAILED' ORDER BY pt.createdAt DESC")
-    List<PaymentTransaction> findFailedTransactions();
+    Page<PaymentTransaction> findFailedTransactions(Pageable pageable);
 
     // Find pending transactions
     @Query("SELECT pt FROM PaymentTransaction pt WHERE pt.status = 'PENDING' ORDER BY pt.createdAt ASC")
-    List<PaymentTransaction> findPendingTransactions();
+    Page<PaymentTransaction> findPendingTransactions(Pageable pageable);
 
     // Find transactions pending for too long
     @Query("SELECT pt FROM PaymentTransaction pt WHERE pt.status = 'PENDING' AND pt.createdAt <= :cutoffTime ORDER BY pt.createdAt ASC")

@@ -1,34 +1,24 @@
 package com.blubugtech.bakery_payment_service.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_payment_service.enums.RefundStatus;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.service.RefundService;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.blubugtech.bakery_payment_service.dto.refund.*;
-import com.blubugtech.bakery_payment_service.dto.refund.*;
+import com.blubugtech.bakery_payment_service.client.UserClient;
+import com.blubugtech.bakery_payment_service.dto.refund.RefundRequest;
+import com.blubugtech.bakery_payment_service.dto.refund.RefundResponse;
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.entity.Refund;
-import com.blubugtech.bakery_payment_service.exception.refund.InvalidRefundException;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import com.blubugtech.bakery_payment_service.exception.payment.PaymentServiceException;
+import com.blubugtech.bakery_payment_service.exception.refund.InvalidRefundException;
+import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
 import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
 import com.blubugtech.bakery_payment_service.repository.RefundRepository;
-import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
-import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
-import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
-import com.blubugtech.bakery_payment_service.exception.gateway.PaymentGatewayException;
-
-import com.blubugtech.bakery_payment_service.client.UserClient;
-import org.blubakery.common.messaging.event.PaymentEvent;
-import org.blubakery.common.messaging.contract.messaging.PaymentPayload;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.blubugtech.bakery_payment_service.service.RefundService;
+import com.blubugtech.bakery_payment_service.mapper.RefundMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
-import com.blubugtech.bakery_payment_service.exception.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +26,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -52,18 +41,20 @@ public class RefundServiceImpl implements RefundService {
     final private List<PaymentGateway> paymentGateways;
 
     final private ObjectMapper objectMapper;
-    
+
     final private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
     final private UserClient userClient;
+    final private RefundMapper refundMapper;
 
-    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, UserClient userClient) {
+    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, UserClient userClient, RefundMapper refundMapper) {
         this.refundRepository = refundRepository;
         this.paymentGateways = paymentGateways;
         this.paymentRepository = paymentRepository;
-        
+
         this.objectMapper = objectMapper;
         this.applicationEventPublisher = applicationEventPublisher;
         this.userClient = userClient;
+        this.refundMapper = refundMapper;
     }
 
     // Create refund
@@ -94,7 +85,7 @@ public class RefundServiceImpl implements RefundService {
             processRefundAsync(savedRefund);
 
             log.info("Refund created successfully: {}", savedRefund.getRefundReference());
-            return RefundResponse.from(savedRefund);
+            return refundMapper.toResponse(savedRefund);
 
         } catch (Exception e) {
             log.error("Failed to create refund for payment {}: {}", request.getPaymentId(), e.getMessage(), e);
@@ -110,7 +101,7 @@ public class RefundServiceImpl implements RefundService {
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with ID: " + refundId));
 
-        return RefundResponse.from(refund);
+        return refundMapper.toResponse(refund);
     }
 
     // Get refund by reference
@@ -121,46 +112,47 @@ public class RefundServiceImpl implements RefundService {
         Refund refund = refundRepository.findByRefundReference(refundReference)
                 .orElseThrow(() -> new PaymentServiceException("Refund not found with reference: " + refundReference));
 
-        return RefundResponse.from(refund);
+        return refundMapper.toResponse(refund);
     }
 
     // Get refunds by payment ID
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByPaymentId(UUID paymentId) {
+    public org.springframework.data.web.PagedModel<RefundResponse> getRefundsByPaymentId(UUID paymentId, Pageable pageable) {
         log.debug("Fetching refunds for payment: {}", paymentId);
 
-        return refundRepository.findByPaymentIdOrderByCreatedAtDesc(paymentId).stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findByPaymentIdOrderByCreatedAtDesc(paymentId, pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get refunds by status
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByStatus(RefundStatus status) {
+    public org.springframework.data.web.PagedModel<RefundResponse> getRefundsByStatus(RefundStatus status, Pageable pageable) {
         log.debug("Fetching refunds by status: {}", status);
 
-        return refundRepository.findByStatusOrderByCreatedAtDesc(status).stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findByStatus(status, pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get all refunds with pagination
     @Transactional(readOnly = true)
-    public Page<RefundResponse> getAllRefunds(Pageable pageable) {
+    public org.springframework.data.web.PagedModel<RefundResponse> getAllRefunds(Pageable pageable) {
         log.debug("Fetching all refunds with pagination");
 
-        return refundRepository.findAll(pageable)
-                .map(RefundResponse::from);
+        Page<RefundResponse> page = refundRepository.findAll(pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get refunds by user
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsByUser(UUID userId) {
+    public org.springframework.data.web.PagedModel<RefundResponse> getRefundsByUser(UUID userId, Pageable pageable) {
         log.debug("Fetching refunds requested by user: {}", userId);
 
-        return refundRepository.findByRequestedByOrderByCreatedAtDesc(userId).stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findByRequestedByOrderByCreatedAtDesc(userId, pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Approve refund
@@ -184,7 +176,7 @@ public class RefundServiceImpl implements RefundService {
         processRefundAsync(approvedRefund);
 
         log.info("Refund approved: {}", refundId);
-        return RefundResponse.from(approvedRefund);
+        return refundMapper.toResponse(approvedRefund);
     }
 
     // Reject refund
@@ -206,37 +198,37 @@ public class RefundServiceImpl implements RefundService {
         Refund rejectedRefund = refundRepository.save(refund);
         log.info("Refund rejected: {}", refundId);
 
-        return RefundResponse.from(rejectedRefund);
+        return refundMapper.toResponse(rejectedRefund);
     }
 
     // Get pending refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getPendingRefunds() {
+    public org.springframework.data.web.PagedModel<RefundResponse> getPendingRefunds(Pageable pageable) {
         log.debug("Fetching pending refunds");
 
-        return refundRepository.findPendingRefunds().stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findPendingRefunds(pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get completed refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getCompletedRefunds() {
+    public org.springframework.data.web.PagedModel<RefundResponse> getCompletedRefunds(Pageable pageable) {
         log.debug("Fetching completed refunds");
 
-        return refundRepository.findCompletedRefunds().stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findCompletedRefunds(pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get failed refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> getFailedRefunds() {
+    public org.springframework.data.web.PagedModel<RefundResponse> getFailedRefunds(Pageable pageable) {
         log.debug("Fetching failed refunds");
 
-        return refundRepository.findFailedRefunds().stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findFailedRefunds(pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get refund statistics
@@ -272,23 +264,23 @@ public class RefundServiceImpl implements RefundService {
 
     // Search refunds
     @Transactional(readOnly = true)
-    public List<RefundResponse> searchRefunds(String searchTerm) {
+    public org.springframework.data.web.PagedModel<RefundResponse> searchRefunds(String searchTerm, Pageable pageable) {
         log.debug("Searching refunds with term: {}", searchTerm);
 
-        return refundRepository.searchRefundsByText(searchTerm).stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.searchRefundsByText(searchTerm, pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Get refunds with filters
     @Transactional(readOnly = true)
     public List<RefundResponse> getRefundsWithFilters(RefundStatus status, UUID requestedBy,
-                                                    UUID approvedBy, BigDecimal minAmount, BigDecimal maxAmount,
-                                                    LocalDateTime startDate, LocalDateTime endDate) {
+                                                      UUID approvedBy, BigDecimal minAmount, BigDecimal maxAmount,
+                                                      LocalDateTime startDate, LocalDateTime endDate) {
         log.debug("Fetching refunds with filters");
 
         return refundRepository.findRefundsWithFilters(status, requestedBy, approvedBy,
-                                                      minAmount, maxAmount, startDate, endDate).stream()
+                        minAmount, maxAmount, startDate, endDate).stream()
                 .map(RefundResponse::from)
                 .collect(Collectors.toList());
     }
@@ -328,7 +320,7 @@ public class RefundServiceImpl implements RefundService {
             updatePaymentRefundStatus(refund.getPayment());
 
             log.info("Refund processing completed: {} status: {}",
-                       refund.getRefundReference(), refund.getStatus());
+                    refund.getRefundReference(), refund.getStatus());
 
         } catch (Exception e) {
             log.error("Refund processing failed: {} - {}", refund.getRefundReference(), e.getMessage(), e);
@@ -377,7 +369,7 @@ public class RefundServiceImpl implements RefundService {
             return "{}";
         }
     }
-    
+
     private void publishRefundEvent(Refund refund) {
         try {
             applicationEventPublisher.publishEvent(new com.blubugtech.bakery_payment_service.event.RefundProcessedApplicationEvent(this, refund));

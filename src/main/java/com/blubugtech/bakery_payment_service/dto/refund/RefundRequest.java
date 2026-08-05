@@ -33,7 +33,8 @@ public class RefundRequest {
     private Map<String, Object> metadata;
 
     // Constructors
-    public RefundRequest() {}
+    public RefundRequest() {
+    }
 
     public RefundRequest(UUID paymentId, BigDecimal amount, String reason, UUID requestedBy) {
         this.paymentId = paymentId;

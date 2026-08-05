@@ -1,17 +1,15 @@
 package com.blubugtech.bakery_payment_service.dto.refund;
 
-import com.blubugtech.bakery_payment_service.enums.RefundStatus;
-
 import com.blubugtech.bakery_payment_service.entity.Refund;
+import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Setter
 @Getter
@@ -42,7 +40,8 @@ public class RefundResponse {
     private Map<String, Object> metadata;
 
     // Constructors
-    public RefundResponse() {}
+    public RefundResponse() {
+    }
 
     // Static factory method
     public static RefundResponse from(Refund refund) {

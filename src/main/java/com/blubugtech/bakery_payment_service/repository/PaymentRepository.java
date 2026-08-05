@@ -1,10 +1,9 @@
 package com.blubugtech.bakery_payment_service.repository;
 
+import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
 import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-
-import com.blubugtech.bakery_payment_service.entity.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,6 +34,8 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     // Find payments by user ID with pagination
     Page<Payment> findByUserId(UUID userId, Pageable pageable);
+
+    Page<Payment> findByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
 
     // Find payment by external transaction ID
     Optional<Payment> findByExternalTransactionId(String externalTransactionId);
@@ -136,7 +137,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     // Get total amount by date range
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.createdAt BETWEEN :startDate AND :endDate")
     BigDecimal getTotalAmountByDateRange(@Param("startDate") LocalDateTime startDate,
-                                        @Param("endDate") LocalDateTime endDate);
+                                         @Param("endDate") LocalDateTime endDate);
 
     // Get total gateway fees
     @Query("SELECT COALESCE(SUM(p.gatewayFee), 0) FROM Payment p WHERE p.status = 'COMPLETED' AND p.createdAt BETWEEN :startDate AND :endDate")
@@ -146,124 +147,124 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     // Get net amount (after fees)
     @Query("SELECT COALESCE(SUM(p.netAmount), 0) FROM Payment p WHERE p.status = 'COMPLETED' AND p.createdAt BETWEEN :startDate AND :endDate")
     BigDecimal getTotalNetAmount(@Param("startDate") LocalDateTime startDate,
-                                @Param("endDate") LocalDateTime endDate);
+                                 @Param("endDate") LocalDateTime endDate);
 
     // Get payment statistics by method
     @Query("SELECT p.paymentMethod as paymentMethod, " +
-           "COUNT(p) as paymentCount, " +
-           "SUM(p.amount) as totalAmount, " +
-           "AVG(p.amount) as averageAmount, " +
-           "SUM(p.gatewayFee) as totalFees " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY p.paymentMethod " +
-           "ORDER BY SUM(p.amount) DESC")
+            "COUNT(p) as paymentCount, " +
+            "SUM(p.amount) as totalAmount, " +
+            "AVG(p.amount) as averageAmount, " +
+            "SUM(p.gatewayFee) as totalFees " +
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY p.paymentMethod " +
+            "ORDER BY SUM(p.amount) DESC")
     List<Object[]> getPaymentStatisticsByMethod(@Param("startDate") LocalDateTime startDate,
-                                               @Param("endDate") LocalDateTime endDate);
+                                                @Param("endDate") LocalDateTime endDate);
 
     // Get payment statistics by gateway
     @Query("SELECT p.paymentGateway as paymentGateway, " +
-           "COUNT(p) as paymentCount, " +
-           "SUM(p.amount) as totalAmount, " +
-           "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successfulPayments, " +
-           "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failedPayments " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY p.paymentGateway " +
-           "ORDER BY SUM(p.amount) DESC")
+            "COUNT(p) as paymentCount, " +
+            "SUM(p.amount) as totalAmount, " +
+            "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successfulPayments, " +
+            "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failedPayments " +
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY p.paymentGateway " +
+            "ORDER BY SUM(p.amount) DESC")
     List<Object[]> getPaymentStatisticsByGateway(@Param("startDate") LocalDateTime startDate,
-                                                @Param("endDate") LocalDateTime endDate);
+                                                 @Param("endDate") LocalDateTime endDate);
 
     // Get payment statistics by status
     @Query("SELECT p.status as status, " +
-           "COUNT(p) as paymentCount, " +
-           "SUM(p.amount) as totalAmount " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY p.status")
+            "COUNT(p) as paymentCount, " +
+            "SUM(p.amount) as totalAmount " +
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY p.status")
     List<Object[]> getPaymentStatisticsByStatus(@Param("startDate") LocalDateTime startDate,
-                                               @Param("endDate") LocalDateTime endDate);
+                                                @Param("endDate") LocalDateTime endDate);
 
     // Get daily payment statistics
     @Query(value = "SELECT DATE(p.created_at) as payment_date, " +
-                   "COUNT(p) as payment_count, " +
-                   "SUM(p.amount) as total_amount, " +
-                   "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successful_payments, " +
-                   "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failed_payments, " +
-                   "AVG(p.amount) as average_amount " +
-                   "FROM payments p " +
-                   "WHERE p.created_at BETWEEN :startDate AND :endDate " +
-                   "GROUP BY DATE(p.created_at) " +
-                   "ORDER BY DATE(p.created_at) DESC", nativeQuery = true)
+            "COUNT(p) as payment_count, " +
+            "SUM(p.amount) as total_amount, " +
+            "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successful_payments, " +
+            "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failed_payments, " +
+            "AVG(p.amount) as average_amount " +
+            "FROM payments p " +
+            "WHERE p.created_at BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE(p.created_at) " +
+            "ORDER BY DATE(p.created_at) DESC", nativeQuery = true)
     List<Object[]> getDailyPaymentStatistics(@Param("startDate") LocalDateTime startDate,
-                                            @Param("endDate") LocalDateTime endDate);
+                                             @Param("endDate") LocalDateTime endDate);
 
     // Get payment success rate
     @Query("SELECT " +
-           "COUNT(p) as totalPayments, " +
-           "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successfulPayments, " +
-           "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failedPayments, " +
-           "COUNT(CASE WHEN p.status = 'PENDING' THEN 1 END) as pendingPayments " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate")
+            "COUNT(p) as totalPayments, " +
+            "COUNT(CASE WHEN p.status = 'COMPLETED' THEN 1 END) as successfulPayments, " +
+            "COUNT(CASE WHEN p.status = 'FAILED' THEN 1 END) as failedPayments, " +
+            "COUNT(CASE WHEN p.status = 'PENDING' THEN 1 END) as pendingPayments " +
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate")
     Object[] getPaymentSuccessRate(@Param("startDate") LocalDateTime startDate,
                                    @Param("endDate") LocalDateTime endDate);
 
     // Get average processing time
     @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (p.captured_at - p.created_at))/60) " +
-                   "FROM payments p " +
-                   "WHERE p.status = 'COMPLETED' " +
-                   "AND p.captured_at IS NOT NULL " +
-                   "AND p.created_at BETWEEN :startDate AND :endDate", nativeQuery = true)
+            "FROM payments p " +
+            "WHERE p.status = 'COMPLETED' " +
+            "AND p.captured_at IS NOT NULL " +
+            "AND p.created_at BETWEEN :startDate AND :endDate", nativeQuery = true)
     Double getAverageProcessingTimeInMinutes(@Param("startDate") LocalDateTime startDate,
-                                            @Param("endDate") LocalDateTime endDate);
+                                             @Param("endDate") LocalDateTime endDate);
 
     // Get top payment methods by usage
     @Query("SELECT p.paymentMethod, COUNT(p) as usageCount " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY p.paymentMethod " +
-           "ORDER BY COUNT(p) DESC")
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY p.paymentMethod " +
+            "ORDER BY COUNT(p) DESC")
     List<Object[]> getTopPaymentMethods(@Param("startDate") LocalDateTime startDate,
-                                       @Param("endDate") LocalDateTime endDate);
+                                        @Param("endDate") LocalDateTime endDate);
 
     // Get top users by payment volume
     @Query("SELECT p.userId, " +
-           "COUNT(p) as paymentCount, " +
-           "SUM(p.amount) as totalAmount " +
-           "FROM Payment p " +
-           "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
-           "AND p.status = 'COMPLETED' " +
-           "GROUP BY p.userId " +
-           "ORDER BY SUM(p.amount) DESC")
+            "COUNT(p) as paymentCount, " +
+            "SUM(p.amount) as totalAmount " +
+            "FROM Payment p " +
+            "WHERE p.createdAt BETWEEN :startDate AND :endDate " +
+            "AND p.status = 'COMPLETED' " +
+            "GROUP BY p.userId " +
+            "ORDER BY SUM(p.amount) DESC")
     List<Object[]> getTopUsersByPaymentVolume(@Param("startDate") LocalDateTime startDate,
-                                             @Param("endDate") LocalDateTime endDate,
-                                             Pageable pageable);
+                                              @Param("endDate") LocalDateTime endDate,
+                                              Pageable pageable);
 
     // Advanced search with multiple filters
     @Query("SELECT p FROM Payment p " +
-           "WHERE (:userId IS NULL OR p.userId = :userId) " +
-           "AND (:status IS NULL OR p.status = :status) " +
-           "AND (:paymentMethod IS NULL OR p.paymentMethod = :paymentMethod) " +
-           "AND (:paymentGateway IS NULL OR p.paymentGateway = :paymentGateway) " +
-           "AND (:minAmount IS NULL OR p.amount >= :minAmount) " +
-           "AND (:maxAmount IS NULL OR p.amount <= :maxAmount) " +
-           "AND (:startDate IS NULL OR p.createdAt >= :startDate) " +
-           "AND (:endDate IS NULL OR p.createdAt <= :endDate) " +
-           "ORDER BY p.createdAt DESC")
+            "WHERE (:userId IS NULL OR p.userId = :userId) " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:paymentMethod IS NULL OR p.paymentMethod = :paymentMethod) " +
+            "AND (:paymentGateway IS NULL OR p.paymentGateway = :paymentGateway) " +
+            "AND (:minAmount IS NULL OR p.amount >= :minAmount) " +
+            "AND (:maxAmount IS NULL OR p.amount <= :maxAmount) " +
+            "AND (:startDate IS NULL OR p.createdAt >= :startDate) " +
+            "AND (:endDate IS NULL OR p.createdAt <= :endDate) " +
+            "ORDER BY p.createdAt DESC")
     List<Payment> findPaymentsWithFilters(@Param("userId") UUID userId,
-                                         @Param("status") PaymentStatus status,
-                                         @Param("paymentMethod") PaymentMethod paymentMethod,
-                                         @Param("paymentGateway") PaymentGatewayProvider paymentGateway,
-                                         @Param("minAmount") BigDecimal minAmount,
-                                         @Param("maxAmount") BigDecimal maxAmount,
-                                         @Param("startDate") LocalDateTime startDate,
-                                         @Param("endDate") LocalDateTime endDate);
+                                          @Param("status") PaymentStatus status,
+                                          @Param("paymentMethod") PaymentMethod paymentMethod,
+                                          @Param("paymentGateway") PaymentGatewayProvider paymentGateway,
+                                          @Param("minAmount") BigDecimal minAmount,
+                                          @Param("maxAmount") BigDecimal maxAmount,
+                                          @Param("startDate") LocalDateTime startDate,
+                                          @Param("endDate") LocalDateTime endDate);
 
     // Search payments by description or notes
     @Query("SELECT p FROM Payment p " +
-           "WHERE LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-           "OR LOWER(p.notes) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-           "ORDER BY p.createdAt DESC")
+            "WHERE LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(p.notes) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "ORDER BY p.createdAt DESC")
     List<Payment> searchPaymentsByText(@Param("searchTerm") String searchTerm);
 }

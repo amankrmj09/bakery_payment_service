@@ -1,20 +1,16 @@
 package com.blubugtech.bakery_payment_service.controller;
 
-import lombok.extern.slf4j.Slf4j;
+import com.blubugtech.bakery_payment_service.dto.transaction.PaymentTransactionResponse;
 import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
-
-import com.blubugtech.bakery_payment_service.dto.transaction.*;
-import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
 import com.blubugtech.bakery_payment_service.service.PaymentTransactionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,23 +44,34 @@ public class TransactionController {
 
     // Get transactions by payment ID
     @GetMapping("/payment/{paymentId}")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByPaymentId(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentTransactionResponse>> getTransactionsByPaymentId(
             @PathVariable UUID paymentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get transactions by payment ID request received: {}", paymentId);
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByPaymentId(paymentId);
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} transactions for payment", transactions.size());
+        org.springframework.data.web.PagedModel<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByPaymentId(paymentId, pageable);
+
+        log.info("Retrieved transactions for payment");
         return ResponseEntity.ok(transactions);
     }
 
     // Get transactions by status
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByStatus(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentTransactionResponse>> getTransactionsByStatus(
             @PathVariable TransactionStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get transactions by status request received: {}", status);
@@ -74,17 +81,24 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByStatus(status);
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} transactions with status {}", transactions.size(), status);
+        org.springframework.data.web.PagedModel<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByStatus(status, pageable);
+
+        log.info("Retrieved transactions with status {}", status);
         return ResponseEntity.ok(transactions);
     }
 
     // Get transactions by type
     @GetMapping("/type/{type}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentTransactionResponse>> getTransactionsByType(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentTransactionResponse>> getTransactionsByType(
             @PathVariable TransactionType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get transactions by type request received: {}", type);
@@ -94,16 +108,23 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByType(type);
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} transactions with type {}", transactions.size(), type);
+        org.springframework.data.web.PagedModel<PaymentTransactionResponse> transactions = paymentTransactionService.getTransactionsByType(type, pageable);
+
+        log.info("Retrieved transactions with type {}", type);
         return ResponseEntity.ok(transactions);
     }
 
     // Get pending transactions
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentTransactionResponse>> getPendingTransactions(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentTransactionResponse>> getPendingTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get pending transactions request received");
@@ -113,16 +134,23 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getPendingTransactions();
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} pending transactions", transactions.size());
+        org.springframework.data.web.PagedModel<PaymentTransactionResponse> transactions = paymentTransactionService.getPendingTransactions(pageable);
+
+        log.info("Retrieved pending transactions");
         return ResponseEntity.ok(transactions);
     }
 
     // Get failed transactions
     @GetMapping("/failed")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PaymentTransactionResponse>> getFailedTransactions(
+    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentTransactionResponse>> getFailedTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Get failed transactions request received");
@@ -132,9 +160,12 @@ public class TransactionController {
             return ResponseEntity.status(403).build();
         }
 
-        List<PaymentTransactionResponse> transactions = paymentTransactionService.getFailedTransactions();
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        log.info("Retrieved {} failed transactions", transactions.size());
+        org.springframework.data.web.PagedModel<PaymentTransactionResponse> transactions = paymentTransactionService.getFailedTransactions(pageable);
+
+        log.info("Retrieved failed transactions");
         return ResponseEntity.ok(transactions);
     }
 

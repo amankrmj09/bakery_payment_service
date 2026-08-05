@@ -1,29 +1,38 @@
 package com.blubugtech.bakery_payment_service.service;
 
+import com.blubugtech.bakery_payment_service.dto.transaction.PaymentTransactionResponse;
 import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
 
-import com.blubugtech.bakery_payment_service.dto.payment.*;
-import com.blubugtech.bakery_payment_service.dto.refund.*;
-import com.blubugtech.bakery_payment_service.dto.transaction.*;
-import com.blubugtech.bakery_payment_service.entity.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import java.time.LocalDateTime;
-import java.util.*;
-import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 
 public interface PaymentTransactionService {
     PaymentTransactionResponse getTransactionById(UUID transactionId);
-    List<PaymentTransactionResponse> getTransactionsByPaymentId(UUID paymentId);
-    List<PaymentTransactionResponse> getTransactionsByStatus(TransactionStatus status);
-    List<PaymentTransactionResponse> getTransactionsByType(TransactionType transactionType);
+
+    PagedModel<PaymentTransactionResponse> getTransactionsByPaymentId(UUID paymentId, Pageable pageable);
+
+    PagedModel<PaymentTransactionResponse> getTransactionsByStatus(TransactionStatus status, Pageable pageable);
+
+    PagedModel<PaymentTransactionResponse> getTransactionsByType(TransactionType transactionType, Pageable pageable);
+
     Optional<PaymentTransactionResponse> getTransactionByGatewayId(String gatewayTransactionId);
+
     PaymentTransactionResponse failTransaction(UUID transactionId, String failureReason, String failureCode);
-    List<PaymentTransactionResponse> getPendingTransactions();
-    List<PaymentTransactionResponse> getFailedTransactions();
+
+    PagedModel<PaymentTransactionResponse> getPendingTransactions(Pageable pageable);
+
+    PagedModel<PaymentTransactionResponse> getFailedTransactions(Pageable pageable);
+
     List<PaymentTransactionResponse> getOldPendingTransactions(int minutes);
+
     boolean hasSuccessfulTransaction(UUID paymentId, TransactionType transactionType);
+
     Map<String, Object> getTransactionStatistics(LocalDateTime startDate, LocalDateTime endDate);
 }

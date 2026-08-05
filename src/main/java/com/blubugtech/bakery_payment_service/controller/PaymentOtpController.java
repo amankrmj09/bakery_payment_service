@@ -1,14 +1,14 @@
 package com.blubugtech.bakery_payment_service.controller;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 import com.blubugtech.bakery_payment_service.dto.payment.PaymentStatusUpdateRequest;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 import com.blubugtech.bakery_payment_service.service.OtpService;
 import com.blubugtech.bakery_payment_service.service.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +32,7 @@ public class PaymentOtpController {
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
-        
+
         log.info("Sending OTP for payment ID: {}", paymentId);
         String otp = otpService.generateAndSendOtp(paymentId.toString(), userId, email);
         // Do not return OTP in production, only for learning purposes
@@ -43,7 +43,7 @@ public class PaymentOtpController {
     public ResponseEntity<Map<String, String>> verifyOtp(@PathVariable UUID paymentId, @RequestBody Map<String, String> request) {
         String otp = request.get("otp");
         log.info("Verifying OTP for payment ID: {}", paymentId);
-        
+
         boolean isValid = otpService.verifyOtp(paymentId.toString(), otp);
         if (isValid) {
             PaymentStatusUpdateRequest statusUpdate = new PaymentStatusUpdateRequest();
@@ -61,7 +61,7 @@ public class PaymentOtpController {
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
-        
+
         log.info("Resending OTP for payment ID: {}", paymentId);
         String otp = otpService.resendOtp(paymentId.toString(), userId, email);
         if (otp == null) {

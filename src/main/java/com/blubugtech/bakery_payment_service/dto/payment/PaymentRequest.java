@@ -2,9 +2,10 @@ package com.blubugtech.bakery_payment_service.dto.payment;
 
 import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
 import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
-
-import com.blubugtech.bakery_payment_service.entity.Payment;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -65,7 +66,8 @@ public class PaymentRequest {
     private Map<String, Object> metadata;
 
     // Constructors
-    public PaymentRequest() {}
+    public PaymentRequest() {
+    }
 
     public PaymentRequest(UUID orderId, UUID userId, PaymentMethod paymentMethod, BigDecimal amount) {
         this.orderId = orderId;

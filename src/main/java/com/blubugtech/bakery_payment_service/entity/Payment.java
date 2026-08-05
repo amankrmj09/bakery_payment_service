@@ -1,35 +1,33 @@
 package com.blubugtech.bakery_payment_service.entity;
 
-import com.blubugtech.bakery_payment_service.enums.RefundStatus;
-
+import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
+import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
+import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import com.blubugtech.bakery_payment_service.enums.PaymentMethod;
-import com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "payments", indexes = {
-    @Index(name = "idx_payment_reference", columnList = "payment_reference"),
-    @Index(name = "idx_payment_order", columnList = "order_id"),
-    @Index(name = "idx_payment_status", columnList = "status"),
-    @Index(name = "idx_payment_method", columnList = "payment_method"),
-    @Index(name = "idx_payment_gateway", columnList = "payment_gateway"),
-    @Index(name = "idx_payment_date", columnList = "created_at"),
-    @Index(name = "idx_external_transaction", columnList = "external_transaction_id")
+        @Index(name = "idx_payment_reference", columnList = "payment_reference"),
+        @Index(name = "idx_payment_order", columnList = "order_id"),
+        @Index(name = "idx_payment_status", columnList = "status"),
+        @Index(name = "idx_payment_method", columnList = "payment_method"),
+        @Index(name = "idx_payment_gateway", columnList = "payment_gateway"),
+        @Index(name = "idx_payment_date", columnList = "created_at"),
+        @Index(name = "idx_external_transaction", columnList = "external_transaction_id")
 })
 public class Payment {
 
@@ -177,7 +175,8 @@ public class Payment {
     private String notes;
 
     // Constructors
-    public Payment() {}
+    public Payment() {
+    }
 
     public Payment(UUID orderId, UUID userId, PaymentMethod paymentMethod, BigDecimal amount, String description) {
         this.orderId = orderId;
