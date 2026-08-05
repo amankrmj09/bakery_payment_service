@@ -181,7 +181,7 @@ public class PaymentTransactionServiceImpl implements PaymentTransactionService 
 
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(minutes);
         return paymentTransactionRepository.findPendingTransactionsOlderThan(cutoffTime).stream()
-                .map(PaymentTransactionResponse::from)
+                .map(paymentTransactionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 

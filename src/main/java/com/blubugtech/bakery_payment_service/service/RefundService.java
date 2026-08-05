@@ -40,4 +40,8 @@ public interface RefundService {
     Map<String, Object> getRefundStatistics(LocalDateTime startDate, LocalDateTime endDate);
 
     PagedModel<RefundResponse> searchRefunds(String searchTerm, Pageable pageable);
+
+    PagedModel<RefundResponse> getRefundsWithFilters(RefundStatus status, UUID requestedBy,
+                                                     UUID approvedBy, java.math.BigDecimal minAmount, java.math.BigDecimal maxAmount,
+                                                     LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 }

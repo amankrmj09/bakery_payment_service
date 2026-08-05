@@ -15,6 +15,7 @@ import com.blubugtech.bakery_payment_service.dto.otp.OtpMessageResponse;
 import com.blubugtech.bakery_payment_service.dto.otp.OtpSendResponse;
 import com.blubugtech.bakery_payment_service.dto.otp.VerifyOtpRequest;
 import com.blubugtech.bakery_payment_service.mapper.OtpMapper;
+import jakarta.validation.Valid;
 
 import java.util.UUID;
 
@@ -47,7 +48,7 @@ public class PaymentOtpController {
     }
 
     @PostMapping("/{paymentId}/verify-otp")
-    public ResponseEntity<?> verifyOtp(@PathVariable UUID paymentId, @RequestBody VerifyOtpRequest request) {
+    public ResponseEntity<?> verifyOtp(@PathVariable UUID paymentId, @Valid @RequestBody VerifyOtpRequest request) {
         String otp = request.getOtp();
         log.info("Verifying OTP for payment ID: {}", paymentId);
 

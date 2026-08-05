@@ -353,7 +353,7 @@ public class RefundController {
     // Advanced search with filters
     @GetMapping("/filter")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<RefundResponse>> getRefundsWithFilters(
+    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getRefundsWithFilters(
             @RequestParam(required = false) RefundStatus status,
             @RequestParam(required = false) UUID requestedBy,
             @RequestParam(required = false) UUID approvedBy,
@@ -361,6 +361,10 @@ public class RefundController {
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
 
         log.info("Advanced filter search request received");
@@ -370,11 +374,13 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        // List<RefundResponse> refunds = refundService.getRefundsWithFilters(
-        // status, requestedBy, approvedBy, minAmount, maxAmount, startDate, endDate);
-        List<RefundResponse> refunds = new java.util.ArrayList<>();
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        log.info("Filter search returned {} refunds", refunds.size());
+        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getRefundsWithFilters(
+                status, requestedBy, approvedBy, minAmount, maxAmount, startDate, endDate, pageable);
+
+        log.info("Filter search returned a page of refunds");
         return ResponseEntity.ok(refunds);
     }
 

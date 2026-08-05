@@ -267,15 +267,16 @@ public class RefundServiceImpl implements RefundService {
 
     // Get refunds with filters
     @Transactional(readOnly = true)
-    public List<RefundResponse> getRefundsWithFilters(RefundStatus status, UUID requestedBy,
+    @Override
+    public org.springframework.data.web.PagedModel<RefundResponse> getRefundsWithFilters(RefundStatus status, UUID requestedBy,
                                                       UUID approvedBy, BigDecimal minAmount, BigDecimal maxAmount,
-                                                      LocalDateTime startDate, LocalDateTime endDate) {
+                                                      LocalDateTime startDate, LocalDateTime endDate, org.springframework.data.domain.Pageable pageable) {
         log.debug("Fetching refunds with filters");
 
-        return refundRepository.findRefundsWithFilters(status, requestedBy, approvedBy,
-                        minAmount, maxAmount, startDate, endDate).stream()
-                .map(RefundResponse::from)
-                .collect(Collectors.toList());
+        Page<RefundResponse> page = refundRepository.findRefundsWithFilters(status, requestedBy, approvedBy,
+                        minAmount, maxAmount, startDate, endDate, pageable)
+                .map(refundMapper::toResponse);
+        return new org.springframework.data.web.PagedModel<>(page);
     }
 
     // Private helper methods

@@ -28,12 +28,12 @@ public class GlobalExceptionHandler extends BaseExceptionHandler {
     public ResponseEntity<ErrorResponse> handlePaymentServiceException(PaymentServiceException ex, WebRequest request) {
         log.error("Payment service error: {}", ex.getMessage());
 
-        ErrorResponse error = new ErrorResponse(
-                ErrorCode.PAYMENT_SERVICE_ERROR.name(),
-                ex.getMessage(),
-                LocalDateTime.now(),
-                request.getDescription(false)
-        );
+        ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.PAYMENT_SERVICE_ERROR.name())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .path(request.getDescription(false))
+                .build();
 
         return ResponseEntity.badRequest().body(error);
     }
@@ -53,12 +53,12 @@ public class GlobalExceptionHandler extends BaseExceptionHandler {
             status = HttpStatus.BAD_REQUEST;
         }
 
-        ErrorResponse error = new ErrorResponse(
-                ErrorCode.EXTERNAL_SERVICE_ERROR.name(),
-                message,
-                LocalDateTime.now(),
-                request.getDescription(false)
-        );
+        ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.EXTERNAL_SERVICE_ERROR.name())
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .path(request.getDescription(false))
+                .build();
 
         return ResponseEntity.status(status).body(error);
     }
@@ -68,19 +68,19 @@ public class GlobalExceptionHandler extends BaseExceptionHandler {
 
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePaymentNotFoundException(PaymentNotFoundException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse(ErrorCode.PAYMENT_NOT_FOUND.name(), ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+        ErrorResponse error = ErrorResponse.builder().code(ErrorCode.PAYMENT_NOT_FOUND.name()).message(ex.getMessage()).timestamp(LocalDateTime.now()).path(request.getDescription(false)).build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(OrderNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleOrderNotFoundException(OrderNotFoundException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse(ErrorCode.ORDER_NOT_FOUND.name(), ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+        ErrorResponse error = ErrorResponse.builder().code(ErrorCode.ORDER_NOT_FOUND.name()).message(ex.getMessage()).timestamp(LocalDateTime.now()).path(request.getDescription(false)).build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler({InvalidPaymentAmountException.class, InvalidPaymentStatusException.class, InvalidRefundException.class})
     public ResponseEntity<ErrorResponse> handleInvalidPaymentException(RuntimeException ex, WebRequest request) {
-        ErrorResponse error = new ErrorResponse(ErrorCode.INVALID_PAYMENT_REQUEST.name(), ex.getMessage(), LocalDateTime.now(), request.getDescription(false));
+        ErrorResponse error = ErrorResponse.builder().code(ErrorCode.INVALID_PAYMENT_REQUEST.name()).message(ex.getMessage()).timestamp(LocalDateTime.now()).path(request.getDescription(false)).build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 

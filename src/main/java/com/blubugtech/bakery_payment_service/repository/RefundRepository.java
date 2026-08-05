@@ -174,13 +174,13 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             "AND (:minAmount IS NULL OR r.amount >= :minAmount) " +
             "AND (:maxAmount IS NULL OR r.amount <= :maxAmount) " +
             "AND (:startDate IS NULL OR r.createdAt >= :startDate) " +
-            "AND (:endDate IS NULL OR r.createdAt <= :endDate) " +
-            "ORDER BY r.createdAt DESC")
-    List<Refund> findRefundsWithFilters(@Param("status") RefundStatus status,
+            "AND (:endDate IS NULL OR r.createdAt <= :endDate)")
+    Page<Refund> findRefundsWithFilters(@Param("status") RefundStatus status,
                                         @Param("requestedBy") UUID requestedBy,
                                         @Param("approvedBy") UUID approvedBy,
                                         @Param("minAmount") BigDecimal minAmount,
                                         @Param("maxAmount") BigDecimal maxAmount,
                                         @Param("startDate") LocalDateTime startDate,
-                                        @Param("endDate") LocalDateTime endDate);
+                                        @Param("endDate") LocalDateTime endDate,
+                                        Pageable pageable);
 }

@@ -5,64 +5,41 @@ import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
 import com.blubugtech.bakery_payment_service.enums.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-@Setter
-@Getter
-@Slf4j
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaymentTransactionResponse {
 
-    // Getters and Setters
     private UUID id;
     private TransactionType transactionType;
-    private TransactionStatus status;
-    private BigDecimal amount;
+    
+    @Builder.Default
+    private TransactionStatus status = TransactionStatus.PENDING;
+    
+    @Builder.Default
+    private BigDecimal amount = BigDecimal.ZERO;
+    
     private String currencyCode;
     private String gatewayTransactionId;
     private String gatewayResponse;
     private String failureReason;
     private String failureCode;
     private String description;
-    private LocalDateTime createdAt;
+    
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
     private LocalDateTime processedAt;
     private Map<String, Object> metadata;
-
-    // Constructors
-    public PaymentTransactionResponse() {
-    }
-
-    // Static factory method
-    public static PaymentTransactionResponse from(PaymentTransaction transaction) {
-        PaymentTransactionResponse response = new PaymentTransactionResponse();
-        response.id = transaction.getId();
-        response.transactionType = transaction.getTransactionType();
-        response.status = transaction.getStatus();
-        response.amount = transaction.getAmount();
-        response.currencyCode = transaction.getCurrencyCode();
-        response.gatewayTransactionId = transaction.getGatewayTransactionId();
-        response.gatewayResponse = transaction.getGatewayResponse();
-        response.failureReason = transaction.getFailureReason();
-        response.failureCode = transaction.getFailureCode();
-        response.description = transaction.getDescription();
-        response.createdAt = transaction.getCreatedAt();
-        response.processedAt = transaction.getProcessedAt();
-
-        // Parse metadata JSON if exists
-        if (transaction.getMetadata() != null) {
-            try {
-                response.metadata = Map.of("raw", transaction.getMetadata());
-            } catch (Exception e) {
-                log.error("Failed to parse metadata", e);
-                response.metadata = Map.of("error", "Failed to parse metadata");
-            }
-        }
-
-        return response;
-    }
-
 }
