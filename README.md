@@ -35,20 +35,148 @@ List the core capabilities and features of this service.
 - Internal Statistics synchronization to the Admin Dashboard.
 
 ## 📁 Folder Structure
-The source code under `src/main/java` is organized as follows:
 ```text
-src/
-└── main/
-    └── java/.../bakery_payment_service/
-        ├── client/     # Feign clients for syncing internal stats to the Admin Dashboard
-        ├── config/     # Spring Boot configurations (Gateways, Security, Kafka, etc.)
-        ├── controller/ # REST endpoints and third-party Webhooks for payments
-        ├── dto/        # Data Transfer Objects
-        ├── entity/     # Database entities (Payment, Refund, Transaction)
-        ├── exception/  # Custom payment and gateway exceptions
-        ├── kafka/      # Event consumers/producers to handle asynchronous payment requests
-        ├── repository/ # Spring Data JPA interfaces
-        └── service/    # Business logic covering third-party Gateways and Event publishing
+bakery_payment_service/
+├── .env
+├── .env.example
+├── .gitattributes
+├── .gitignore
+├── API_REFERENCE.md
+├── Dockerfile
+├── README.md
+├── build.gradle.kts
+├── gradle.properties
+├── gradlew
+├── gradlew.bat
+├── settings.gradle.kts
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── com/
+    │   │       └── blubugtech/
+    │   │           └── bakery_payment_service/
+    │   │               ├── BakeryPaymentServiceApplication.java
+    │   │               ├── client/
+    │   │               │   ├── OrderClient.java
+    │   │               │   ├── OrderClientFallbackFactory.java
+    │   │               │   ├── UserClient.java
+    │   │               │   ├── UserClientFallbackFactory.java
+    │   │               │   └── statistics/
+    │   │               │       ├── InternalStatsClient.java
+    │   │               │       └── InternalStatsClientFallbackFactory.java
+    │   │               ├── controller/
+    │   │               │   ├── PaymentAdminController.java
+    │   │               │   ├── PaymentController.java
+    │   │               │   ├── PaymentOtpController.java
+    │   │               │   ├── RefundController.java
+    │   │               │   └── TransactionController.java
+    │   │               ├── dto/
+    │   │               │   ├── DateRangeResponse.java
+    │   │               │   ├── PaymentGatewayStatResponse.java
+    │   │               │   ├── PaymentMethodStatResponse.java
+    │   │               │   ├── PaymentStatisticsResponse.java
+    │   │               │   ├── PaymentStatusStatResponse.java
+    │   │               │   ├── otp/
+    │   │               │   │   ├── OtpErrorResponse.java
+    │   │               │   │   ├── OtpMessageResponse.java
+    │   │               │   │   ├── OtpSendResponse.java
+    │   │               │   │   └── VerifyOtpRequest.java
+    │   │               │   ├── payment/
+    │   │               │   │   ├── PaymentRequest.java
+    │   │               │   │   ├── PaymentResponse.java
+    │   │               │   │   └── PaymentStatusUpdateRequest.java
+    │   │               │   ├── refund/
+    │   │               │   │   ├── RefundRequest.java
+    │   │               │   │   └── RefundResponse.java
+    │   │               │   └── transaction/
+    │   │               │       └── PaymentTransactionResponse.java
+    │   │               ├── entity/
+    │   │               │   ├── Payment.java
+    │   │               │   ├── PaymentTransaction.java
+    │   │               │   └── Refund.java
+    │   │               ├── enums/
+    │   │               │   ├── ErrorCode.java
+    │   │               │   ├── PaymentGatewayProvider.java
+    │   │               │   ├── PaymentMethod.java
+    │   │               │   ├── PaymentStatus.java
+    │   │               │   ├── RefundStatus.java
+    │   │               │   ├── TransactionStatus.java
+    │   │               │   └── TransactionType.java
+    │   │               ├── event/
+    │   │               │   ├── PaymentEventListener.java
+    │   │               │   ├── PaymentStatusUpdatedApplicationEvent.java
+    │   │               │   └── RefundProcessedApplicationEvent.java
+    │   │               ├── exception/
+    │   │               │   ├── GlobalExceptionHandler.java
+    │   │               │   ├── gateway/
+    │   │               │   │   └── PaymentGatewayException.java
+    │   │               │   ├── order/
+    │   │               │   │   └── OrderNotFoundException.java
+    │   │               │   ├── payment/
+    │   │               │   │   ├── DuplicatePaymentException.java
+    │   │               │   │   ├── InvalidPaymentAmountException.java
+    │   │               │   │   ├── InvalidPaymentStatusException.java
+    │   │               │   │   ├── PaymentNotFoundException.java
+    │   │               │   │   ├── PaymentServiceException.java
+    │   │               │   │   └── PaymentTimeoutException.java
+    │   │               │   └── refund/
+    │   │               │       ├── InvalidRefundException.java
+    │   │               │       └── RefundFailedException.java
+    │   │               ├── integration/
+    │   │               │   ├── kafka/
+    │   │               │   │   ├── consumer/
+    │   │               │   │   │   ├── OrderEventListener.java
+    │   │               │   │   │   └── PaymentRequestedEventConsumer.java
+    │   │               │   │   └── producer/
+    │   │               │   │       ├── PaymentEventPublisher.java
+    │   │               │   │       └── UserEventPublisher.java
+    │   │               │   └── payment/
+    │   │               │       ├── ManualGateway.java
+    │   │               │       ├── MockGateway.java
+    │   │               │       ├── OtpPaymentGateway.java
+    │   │               │       ├── PaymentGateway.java
+    │   │               │       └── PaymentGatewayResult.java
+    │   │               ├── mapper/
+    │   │               │   ├── OtpMapper.java
+    │   │               │   ├── PaymentMapper.java
+    │   │               │   ├── PaymentTransactionMapper.java
+    │   │               │   └── RefundMapper.java
+    │   │               ├── repository/
+    │   │               │   ├── PaymentRepository.java
+    │   │               │   ├── PaymentTransactionRepository.java
+    │   │               │   └── RefundRepository.java
+    │   │               ├── service/
+    │   │               │   ├── OtpService.java
+    │   │               │   ├── PaymentProcessingService.java
+    │   │               │   ├── PaymentService.java
+    │   │               │   ├── PaymentTransactionService.java
+    │   │               │   ├── RefundService.java
+    │   │               │   └── impl/
+    │   │               │       ├── OtpServiceImpl.java
+    │   │               │       ├── PaymentProcessingServiceImpl.java
+    │   │               │       ├── PaymentServiceImpl.java
+    │   │               │       ├── PaymentTransactionServiceImpl.java
+    │   │               │       └── RefundServiceImpl.java
+    │   │               └── validation/
+    │   │                   ├── PaymentValidator.java
+    │   │                   └── RefundValidator.java
+    │   └── resources/
+    │       ├── db/
+    │       │   └── migration/
+    │       │       └── V1__init.sql
+    │       ├── application.yml
+    │       ├── application-dev.yml
+    │       ├── application-docker.yml
+    │       ├── application-prod.yml
+    │       └── logback-spring.xml
+    └── test/
+        ├── java/
+        │   └── com/
+        │       └── blubugtech/
+        │           └── bakery_payment_service/
+        │               └── BakeryPaymentServiceApplicationTests.java
+        └── resources/
+            └── application-test.yml
 ```
 
 ## 🌐 API Reference
@@ -126,3 +254,5 @@ To run the test suite:
 
 ## 🔗 Related Links
 - [Main Platform README](../README.md)
+- [Parent Repository](https://github.com/amankrmj09/Blu_s_Bakery)
+- [API Reference](./API_REFERENCE.md)
