@@ -20,6 +20,7 @@ import com.blubugtech.bakery_payment_service.mapper.PaymentMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -61,7 +62,7 @@ public class PaymentServiceImpl implements PaymentService {
     final private OrderClient orderClient;
 
     final private KafkaTemplate<String, Object> kafkaTemplate;
-    
+
     final private PaymentMapper paymentMapper;
 
     @Value("${payment.limits.min-amount:0.50}")
@@ -381,7 +382,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    private void validateStatusTransition(PaymentStatus currentStatus, PaymentStatus newStatus) {
+    private void validateStatusTransition(@NonNull PaymentStatus currentStatus, @NonNull PaymentStatus newStatus) {
         boolean isValidTransition = switch (currentStatus) {
             case PENDING -> newStatus == PaymentStatus.PROCESSING ||
                     newStatus == PaymentStatus.CANCELLED ||
@@ -400,7 +401,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void handleStatusTransition(Payment payment, PaymentStatus oldStatus,
-                                        PaymentStatus newStatus, String reason) {
+                                        @NonNull PaymentStatus newStatus, String reason) {
         LocalDateTime now = LocalDateTime.now();
 
         switch (newStatus) {

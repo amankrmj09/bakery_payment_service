@@ -6,11 +6,14 @@ import com.blubugtech.bakery_payment_service.service.PaymentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -110,7 +113,7 @@ public class PaymentController {
 
     // Get payments by user ID
     @GetMapping("/user/{userId}")
-    public ResponseEntity<org.springframework.data.web.PagedModel<PaymentResponse>> getPaymentsByUserId(
+    public ResponseEntity<PagedModel<PaymentResponse>> getPaymentsByUserId(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -126,10 +129,10 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<PaymentResponse> payments = paymentService.getPaymentsByUserId(userId, pageable);
+        PagedModel<PaymentResponse> payments = paymentService.getPaymentsByUserId(userId, pageable);
 
         log.info("Retrieved {} payments for user", payments.getContent().size());
         return ResponseEntity.ok(payments);

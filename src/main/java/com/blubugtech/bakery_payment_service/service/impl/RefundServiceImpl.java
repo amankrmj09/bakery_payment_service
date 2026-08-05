@@ -10,12 +10,14 @@ import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import com.blubugtech.bakery_payment_service.exception.payment.PaymentServiceException;
 import com.blubugtech.bakery_payment_service.exception.refund.InvalidRefundException;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
+import com.blubugtech.bakery_payment_service.mapper.RefundMapper;
 import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
 import com.blubugtech.bakery_payment_service.repository.RefundRepository;
 import com.blubugtech.bakery_payment_service.service.RefundService;
-import com.blubugtech.bakery_payment_service.mapper.RefundMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class RefundServiceImpl implements RefundService {
 
     final private RefundRepository refundRepository;
@@ -42,20 +45,10 @@ public class RefundServiceImpl implements RefundService {
 
     final private ObjectMapper objectMapper;
 
-    final private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
+    final private ApplicationEventPublisher applicationEventPublisher;
     final private UserClient userClient;
     final private RefundMapper refundMapper;
 
-    public RefundServiceImpl(RefundRepository refundRepository, PaymentRepository paymentRepository, List<PaymentGateway> paymentGateways, ObjectMapper objectMapper, org.springframework.context.ApplicationEventPublisher applicationEventPublisher, UserClient userClient, RefundMapper refundMapper) {
-        this.refundRepository = refundRepository;
-        this.paymentGateways = paymentGateways;
-        this.paymentRepository = paymentRepository;
-
-        this.objectMapper = objectMapper;
-        this.applicationEventPublisher = applicationEventPublisher;
-        this.userClient = userClient;
-        this.refundMapper = refundMapper;
-    }
 
     // Create refund
     public RefundResponse createRefund(RefundRequest request) {

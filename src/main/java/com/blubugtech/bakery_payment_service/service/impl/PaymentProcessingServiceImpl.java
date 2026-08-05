@@ -2,9 +2,7 @@ package com.blubugtech.bakery_payment_service.service.impl;
 
 import com.blubugtech.bakery_payment_service.entity.Payment;
 import com.blubugtech.bakery_payment_service.entity.PaymentTransaction;
-import com.blubugtech.bakery_payment_service.enums.PaymentStatus;
-import com.blubugtech.bakery_payment_service.enums.TransactionStatus;
-import com.blubugtech.bakery_payment_service.enums.TransactionType;
+import com.blubugtech.bakery_payment_service.enums.*;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGateway;
 import com.blubugtech.bakery_payment_service.integration.payment.PaymentGatewayResult;
 import com.blubugtech.bakery_payment_service.repository.PaymentRepository;
@@ -104,8 +102,8 @@ public class PaymentProcessingServiceImpl implements PaymentProcessingService {
         }
     }
 
-    private PaymentGateway getGatewayForMethod(com.blubugtech.bakery_payment_service.enums.PaymentMethod method) {
-        com.blubugtech.bakery_payment_service.enums.PaymentGatewayProvider provider = method.getDefaultProvider();
+    private PaymentGateway getGatewayForMethod(PaymentMethod method) {
+        PaymentGatewayProvider provider = method.getDefaultProvider();
         return paymentGateways.stream()
                 .filter(g -> g.getProviderType() == provider)
                 .findFirst()

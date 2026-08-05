@@ -10,7 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import com.blubugtech.bakery_payment_service.dto.otp.OtpErrorResponse;
+import com.blubugtech.bakery_payment_service.dto.otp.OtpMessageResponse;
+import com.blubugtech.bakery_payment_service.dto.otp.OtpSendResponse;
+import com.blubugtech.bakery_payment_service.dto.otp.VerifyOtpRequest;
+import com.blubugtech.bakery_payment_service.mapper.OtpMapper;
+
 import java.util.UUID;
 
 @RestController
@@ -21,14 +26,16 @@ public class PaymentOtpController {
 
     private final OtpService otpService;
     private final PaymentService paymentService;
+    private final OtpMapper otpMapper;
 
-    public PaymentOtpController(OtpService otpService, PaymentService paymentService) {
+    public PaymentOtpController(OtpService otpService, PaymentService paymentService, OtpMapper otpMapper) {
         this.otpService = otpService;
         this.paymentService = paymentService;
+        this.otpMapper = otpMapper;
     }
 
     @PostMapping("/{paymentId}/send-otp")
-    public ResponseEntity<Map<String, String>> sendOtp(
+    public ResponseEntity<OtpSendResponse> sendOtp(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
@@ -36,12 +43,12 @@ public class PaymentOtpController {
         log.info("Sending OTP for payment ID: {}", paymentId);
         String otp = otpService.generateAndSendOtp(paymentId.toString(), userId, email);
         // Do not return OTP in production, only for learning purposes
-        return ResponseEntity.ok(Map.of("message", "OTP sent successfully", "mock_otp", otp));
+        return ResponseEntity.ok(otpMapper.toOtpSendResponse("OTP sent successfully", otp));
     }
 
     @PostMapping("/{paymentId}/verify-otp")
-    public ResponseEntity<Map<String, String>> verifyOtp(@PathVariable UUID paymentId, @RequestBody Map<String, String> request) {
-        String otp = request.get("otp");
+    public ResponseEntity<?> verifyOtp(@PathVariable UUID paymentId, @RequestBody VerifyOtpRequest request) {
+        String otp = request.getOtp();
         log.info("Verifying OTP for payment ID: {}", paymentId);
 
         boolean isValid = otpService.verifyOtp(paymentId.toString(), otp);
@@ -50,14 +57,14 @@ public class PaymentOtpController {
             statusUpdate.setStatus(PaymentStatus.COMPLETED);
             statusUpdate.setReason("OTP Verified successfully");
             paymentService.updatePaymentStatus(paymentId, statusUpdate);
-            return ResponseEntity.ok(Map.of("message", "Payment completed successfully"));
+            return ResponseEntity.ok(otpMapper.toOtpMessageResponse("Payment completed successfully"));
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid or expired OTP"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(otpMapper.toOtpErrorResponse("Invalid or expired OTP"));
         }
     }
 
     @PostMapping("/{paymentId}/resend-otp")
-    public ResponseEntity<Map<String, String>> resendOtp(
+    public ResponseEntity<?> resendOtp(
             @PathVariable UUID paymentId,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Email", required = false) String email) {
@@ -65,8 +72,8 @@ public class PaymentOtpController {
         log.info("Resending OTP for payment ID: {}", paymentId);
         String otp = otpService.resendOtp(paymentId.toString(), userId, email);
         if (otp == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Payment session expired. Please restart checkout."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(otpMapper.toOtpErrorResponse("Payment session expired. Please restart checkout."));
         }
-        return ResponseEntity.ok(Map.of("message", "OTP resent successfully", "mock_otp", otp));
+        return ResponseEntity.ok(otpMapper.toOtpSendResponse("OTP resent successfully", otp));
     }
 }

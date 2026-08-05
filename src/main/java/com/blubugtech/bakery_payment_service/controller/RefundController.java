@@ -6,10 +6,10 @@ import com.blubugtech.bakery_payment_service.enums.RefundStatus;
 import com.blubugtech.bakery_payment_service.service.RefundService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,7 +57,7 @@ public class RefundController {
     // Get all refunds with pagination
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getAllRefunds(
+    public ResponseEntity<PagedModel<RefundResponse>> getAllRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -71,10 +71,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getAllRefunds(pageable);
+        PagedModel<RefundResponse> refunds = refundService.getAllRefunds(pageable);
 
         log.info("Retrieved refunds (page {} of {})", refunds.getMetadata().number() + 1, refunds.getMetadata().totalPages());
         return ResponseEntity.ok(refunds);
@@ -122,7 +122,7 @@ public class RefundController {
 
     // Get refunds by payment ID
     @GetMapping("/payment/{paymentId}")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getRefundsByPaymentId(
+    public ResponseEntity<PagedModel<RefundResponse>> getRefundsByPaymentId(
             @PathVariable UUID paymentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -133,10 +133,10 @@ public class RefundController {
 
         log.info("Get refunds by payment ID request received: {}", paymentId);
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getRefundsByPaymentId(paymentId, pageable);
+        PagedModel<RefundResponse> refunds = refundService.getRefundsByPaymentId(paymentId, pageable);
 
         // NOTE: Filtering by requestedBy after pagination is not ideal, but keeping existing logic structure
         if (userId != null && !"ADMIN".equals(userRole)) {
@@ -149,7 +149,7 @@ public class RefundController {
 
     // Get refunds by user
     @GetMapping("/user/{userId}")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getRefundsByUser(
+    public ResponseEntity<PagedModel<RefundResponse>> getRefundsByUser(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -165,10 +165,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getRefundsByUser(userId, pageable);
+        PagedModel<RefundResponse> refunds = refundService.getRefundsByUser(userId, pageable);
 
         log.info("Retrieved refunds for user");
         return ResponseEntity.ok(refunds);
@@ -177,7 +177,7 @@ public class RefundController {
     // Get refunds by status
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getRefundsByStatus(
+    public ResponseEntity<PagedModel<RefundResponse>> getRefundsByStatus(
             @PathVariable RefundStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -192,10 +192,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getRefundsByStatus(status, pageable);
+        PagedModel<RefundResponse> refunds = refundService.getRefundsByStatus(status, pageable);
 
         log.info("Retrieved refunds with status {}", status);
         return ResponseEntity.ok(refunds);
@@ -248,7 +248,7 @@ public class RefundController {
     // Get pending refunds
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getPendingRefunds(
+    public ResponseEntity<PagedModel<RefundResponse>> getPendingRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -262,10 +262,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getPendingRefunds(pageable);
+        PagedModel<RefundResponse> refunds = refundService.getPendingRefunds(pageable);
 
         log.info("Retrieved pending refunds");
         return ResponseEntity.ok(refunds);
@@ -274,7 +274,7 @@ public class RefundController {
     // Get completed refunds
     @GetMapping("/completed")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getCompletedRefunds(
+    public ResponseEntity<PagedModel<RefundResponse>> getCompletedRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -288,10 +288,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getCompletedRefunds(pageable);
+        PagedModel<RefundResponse> refunds = refundService.getCompletedRefunds(pageable);
 
         log.info("Retrieved completed refunds");
         return ResponseEntity.ok(refunds);
@@ -300,7 +300,7 @@ public class RefundController {
     // Get failed refunds
     @GetMapping("/failed")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> getFailedRefunds(
+    public ResponseEntity<PagedModel<RefundResponse>> getFailedRefunds(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -314,10 +314,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.getFailedRefunds(pageable);
+        PagedModel<RefundResponse> refunds = refundService.getFailedRefunds(pageable);
 
         log.info("Retrieved failed refunds");
         return ResponseEntity.ok(refunds);
@@ -326,7 +326,7 @@ public class RefundController {
     // Search refunds
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<org.springframework.data.web.PagedModel<RefundResponse>> searchRefunds(
+    public ResponseEntity<PagedModel<RefundResponse>> searchRefunds(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -341,10 +341,10 @@ public class RefundController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        org.springframework.data.web.PagedModel<RefundResponse> refunds = refundService.searchRefunds(query, pageable);
+        PagedModel<RefundResponse> refunds = refundService.searchRefunds(query, pageable);
 
         log.info("Search returned refunds");
         return ResponseEntity.ok(refunds);
