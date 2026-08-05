@@ -93,7 +93,7 @@ public class PaymentAdminController {
 
     @GetMapping("/statistics")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> getPaymentStatistics(
+    public ResponseEntity<com.blubugtech.bakery_payment_service.dto.PaymentStatisticsResponse> getPaymentStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
@@ -108,7 +108,7 @@ public class PaymentAdminController {
         if (endDate == null) {
             endDate = LocalDateTime.now();
         }
-        Map<String, Object> statistics = paymentService.getPaymentStatistics(startDate, endDate);
+        com.blubugtech.bakery_payment_service.dto.PaymentStatisticsResponse statistics = paymentService.getPaymentStatistics(startDate, endDate);
         return ResponseEntity.ok(statistics);
     }
 }

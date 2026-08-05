@@ -294,7 +294,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Get payment statistics
     @Transactional(readOnly = true)
-    public Map<String, Object> getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate) {
+    public com.blubugtech.bakery_payment_service.dto.PaymentStatisticsResponse getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate) {
         log.debug("Fetching payment statistics");
 
         try {
@@ -306,28 +306,53 @@ public class PaymentServiceImpl implements PaymentService {
             BigDecimal totalFees = paymentRepository.getTotalGatewayFees(startDate, endDate);
             BigDecimal netAmount = paymentRepository.getTotalNetAmount(startDate, endDate);
 
-            return Map.ofEntries(
-                    Map.entry("totalPayments", successRate[0]),
-                    Map.entry("successfulPayments", successRate[1]),
-                    Map.entry("failedPayments", successRate[2]),
-                    Map.entry("pendingPayments", successRate[3]),
-                    Map.entry("totalAmount", totalAmount),
-                    Map.entry("totalFees", totalFees),
-                    Map.entry("netAmount", netAmount),
-                    Map.entry("paymentsByMethod", methodStats),
-                    Map.entry("paymentsByGateway", gatewayStats),
-                    Map.entry("paymentsByStatus", statusStats),
-                    Map.entry("dateRange", Map.ofEntries(
-                            Map.entry("startDate", startDate.toString()),
-                            Map.entry("endDate", endDate.toString())
-                    ))
-            );
+            List<com.blubugtech.bakery_payment_service.dto.PaymentMethodStatResponse> methodResponses = methodStats.stream().map(obj -> 
+                com.blubugtech.bakery_payment_service.dto.PaymentMethodStatResponse.builder()
+                    .paymentMethod(String.valueOf(obj[0]))
+                    .paymentCount(((Number) obj[1]).longValue())
+                    .totalAmount(obj[2] != null ? (BigDecimal) obj[2] : BigDecimal.ZERO)
+                    .averageAmount(obj[3] != null ? (BigDecimal) obj[3] : BigDecimal.ZERO)
+                    .totalFees(obj[4] != null ? (BigDecimal) obj[4] : BigDecimal.ZERO)
+                    .build()
+            ).toList();
+
+            List<com.blubugtech.bakery_payment_service.dto.PaymentGatewayStatResponse> gatewayResponses = gatewayStats.stream().map(obj -> 
+                com.blubugtech.bakery_payment_service.dto.PaymentGatewayStatResponse.builder()
+                    .paymentGateway(String.valueOf(obj[0]))
+                    .paymentCount(((Number) obj[1]).longValue())
+                    .totalAmount(obj[2] != null ? (BigDecimal) obj[2] : BigDecimal.ZERO)
+                    .successfulPayments(((Number) obj[3]).longValue())
+                    .failedPayments(((Number) obj[4]).longValue())
+                    .build()
+            ).toList();
+
+            List<com.blubugtech.bakery_payment_service.dto.PaymentStatusStatResponse> statusResponses = statusStats.stream().map(obj -> 
+                com.blubugtech.bakery_payment_service.dto.PaymentStatusStatResponse.builder()
+                    .status(String.valueOf(obj[0]))
+                    .paymentCount(((Number) obj[1]).longValue())
+                    .totalAmount(obj[2] != null ? (BigDecimal) obj[2] : BigDecimal.ZERO)
+                    .build()
+            ).toList();
+
+            return com.blubugtech.bakery_payment_service.dto.PaymentStatisticsResponse.builder()
+                    .totalPayments(((Number) successRate[0]).longValue())
+                    .successfulPayments(((Number) successRate[1]).longValue())
+                    .failedPayments(((Number) successRate[2]).longValue())
+                    .pendingPayments(((Number) successRate[3]).longValue())
+                    .totalAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO)
+                    .totalFees(totalFees != null ? totalFees : BigDecimal.ZERO)
+                    .netAmount(netAmount != null ? netAmount : BigDecimal.ZERO)
+                    .paymentsByMethod(methodResponses)
+                    .paymentsByGateway(gatewayResponses)
+                    .paymentsByStatus(statusResponses)
+                    .dateRange(com.blubugtech.bakery_payment_service.dto.DateRangeResponse.builder()
+                            .startDate(startDate.toString())
+                            .endDate(endDate.toString())
+                            .build())
+                    .build();
         } catch (Exception e) {
             log.error("Error fetching payment statistics: {}", e.getMessage(), e);
-            return Map.of(
-                    "error", "Statistics temporarily unavailable",
-                    "message", e.getMessage()
-            );
+            throw new RuntimeException("Statistics temporarily unavailable", e);
         }
     }
 

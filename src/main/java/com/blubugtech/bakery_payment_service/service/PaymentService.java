@@ -33,7 +33,7 @@ public interface PaymentService {
 
     PaymentResponse retryPayment(UUID paymentId);
 
-    Map<String, Object> getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate);
+    com.blubugtech.bakery_payment_service.dto.PaymentStatisticsResponse getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate);
 
     void sendOtp(UUID paymentId);
 
