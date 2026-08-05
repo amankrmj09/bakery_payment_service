@@ -1,6 +1,6 @@
 package com.blubugtech.bakery_payment_service.client.statistics;
 
-import org.blubakery.common.messaging.contract.messaging.RevenuePayload;
+import org.blubakery.common.messaging.revenue.RevenuePayload;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

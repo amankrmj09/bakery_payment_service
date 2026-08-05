@@ -8,7 +8,7 @@ import com.blubugtech.bakery_payment_service.service.RefundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.blubakery.common.messaging.constants.KafkaTopics;
-import org.blubakery.common.messaging.event.OrderEvent;
+import org.blubakery.common.messaging.order.OrderEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 

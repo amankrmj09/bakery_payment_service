@@ -3,8 +3,8 @@ package com.blubugtech.bakery_payment_service.service.impl;
 import com.blubugtech.bakery_payment_service.integration.kafka.producer.UserEventPublisher;
 import com.blubugtech.bakery_payment_service.service.OtpService;
 import lombok.extern.slf4j.Slf4j;
-import org.blubakery.common.messaging.contract.messaging.UserPayload;
-import org.blubakery.common.messaging.event.UserEvent;
+import org.blubakery.common.messaging.user.UserPayload;
+import org.blubakery.common.messaging.user.UserEvent;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 

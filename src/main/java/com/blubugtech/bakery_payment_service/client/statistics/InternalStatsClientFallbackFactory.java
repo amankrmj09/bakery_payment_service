@@ -3,7 +3,7 @@ package com.blubugtech.bakery_payment_service.client.statistics;
 import lombok.extern.slf4j.Slf4j;
 import org.blubakery.common.core.exception.common.ServiceUnavailableException;
 import org.blubakery.common.feign.exception.common.FeignClientException;
-import org.blubakery.common.messaging.contract.messaging.RevenuePayload;
+import org.blubakery.common.messaging.revenue.RevenuePayload;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 

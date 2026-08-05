@@ -28,8 +28,8 @@ public class PaymentEventListener {
         Payment payment = applicationEvent.getPayment();
         try {
             UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
-            org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder().payload(
-                    org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
+            org.blubakery.common.messaging.payment.PaymentEvent event = org.blubakery.common.messaging.payment.PaymentEvent.builder().payload(
+                    org.blubakery.common.messaging.payment.PaymentPayload.builder()
                             .paymentId(payment.getId())
                             .orderId(payment.getOrderId())
                             .userId(payment.getUserId())
@@ -56,12 +56,12 @@ public class PaymentEventListener {
         Payment payment = refund.getPayment();
         try {
             UserClient.UserDto userDto = userClient.getUserById(payment.getUserId());
-            org.blubakery.common.messaging.event.PaymentEvent event = org.blubakery.common.messaging.event.PaymentEvent.builder()
+            org.blubakery.common.messaging.payment.PaymentEvent event = org.blubakery.common.messaging.payment.PaymentEvent.builder()
                     .eventId(java.util.UUID.randomUUID().toString())
                     .eventType("PAYMENT_REFUNDED")
                     .timestamp(java.time.Instant.now())
                     .payload(
-                            org.blubakery.common.messaging.contract.messaging.PaymentPayload.builder()
+                            org.blubakery.common.messaging.payment.PaymentPayload.builder()
                                     .paymentId(payment.getId())
                                     .orderId(payment.getOrderId())
                                     .userId(payment.getUserId())
