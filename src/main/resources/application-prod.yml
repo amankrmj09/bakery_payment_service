@@ -10,15 +10,7 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_URL}
 payment:
-  gateways:
-    stripe:
-      api-key: ${STRIPE_API_KEY}
-      webhook-secret: ${STRIPE_WEBHOOK_SECRET}
-    paypal:
-      client-id: ${PAYPAL_CLIENT_ID}
-      client-secret: ${PAYPAL_CLIENT_SECRET}
-    square:
-      access-token: ${SQUARE_ACCESS_TOKEN}
+  gateways: {}
   limits:
     min-amount: ${PAYMENT_MIN_AMOUNT:50.00}
     max-amount: ${PAYMENT_MAX_AMOUNT:500000.00}

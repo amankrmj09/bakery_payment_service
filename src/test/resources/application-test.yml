@@ -11,8 +11,3 @@ spring:
   flyway:
     enabled: false
 
-stripe:
-  api:
-    key: mock-stripe-key
-  webhook:
-    secret: mock-webhook-secret
